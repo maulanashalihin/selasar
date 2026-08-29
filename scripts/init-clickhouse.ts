@@ -38,7 +38,10 @@ const SCHEMA = [
     city          LowCardinality(String),
     duration_ms   UInt32,
     is_new_visitor UInt8,
-    is_bounce     UInt8
+    os            LowCardinality(String),
+    utm_campaign  LowCardinality(String),
+    utm_content   LowCardinality(String),
+    utm_term      LowCardinality(String)
   )
   ENGINE = MergeTree()
   PARTITION BY toYYYYMM(event_date)

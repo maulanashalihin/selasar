@@ -2,6 +2,7 @@
 	import Layout from '../../components/Layout.svelte'
 	import type { Site } from '../../../shared/types'
 	import DateRangePicker from '../../components/analytics/DateRangePicker.svelte'
+	import EmptyState from '../../components/analytics/EmptyState.svelte'
 	import { DATE_RANGES } from '../../lib/date-ranges'
 
 	let { site }: { site: Site } = $props()
@@ -155,6 +156,14 @@
 		<div class="bg-surface shadow-card rounded-radius p-6 mb-6 text-center text-muted text-sm">Loading…</div>
 	{:else if error}
 		<div class="bg-surface shadow-card rounded-radius p-6 mb-6 text-center text-muted text-sm">{error}</div>
+	{:else if totalVisitors === 0}
+		<EmptyState
+			icon="devices"
+			title="No device data yet"
+			message="Device, browser, and operating system breakdowns will appear here once visitors start browsing your site."
+			actionHref={`/sites/${site.id}/analytics/tracking`}
+			actionLabel="View tracking guide"
+		/>
 	{:else}
 		<div class="grid grid-cols-3 gap-4 mb-6">
 			{#each deviceTotals as dt (dt.device)}

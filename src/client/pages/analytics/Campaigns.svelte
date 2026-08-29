@@ -3,6 +3,7 @@
 	import type { Site } from '../../../shared/types'
 	import DateRangePicker from '../../components/analytics/DateRangePicker.svelte'
 	import { DATE_RANGES } from '../../lib/date-ranges'
+	import EmptyState from '../../components/analytics/EmptyState.svelte'
 
 	let { site }: { site: Site } = $props()
 
@@ -105,9 +106,14 @@
 			<p class="text-sm text-muted text-center py-8">{error}</p>
 		</div>
 	{:else if campaigns.length === 0}
-		<div class="bg-surface shadow-card rounded-radius p-5">
-			<p class="text-sm text-muted text-center py-8">No campaign data for this period.</p>
-		</div>
+	<EmptyState
+		icon="campaigns"
+		title="No campaign data yet"
+		message="UTM campaign data appears when visitors arrive via URLs with utm_source, utm_medium, or utm_campaign parameters."
+		hint='Try adding UTM params to your marketing links. Example: <code class="bg-bg px-1.5 py-0.5 rounded text-xs">?utm_source=google&utm_medium=cpc&utm_campaign=summer_sale</code>'
+		actionHref={`/sites/${site.id}/analytics/tracking`}
+		actionLabel="View tracking guide"
+	/>
 	{:else}
 		<!-- Hero total: gradient banner, distinct from other pages' plain cards -->
 		<div

@@ -2,6 +2,7 @@
 	import Layout from '../../components/Layout.svelte'
 	import type { Site } from '../../../shared/types'
 	import DateRangePicker from '../../components/analytics/DateRangePicker.svelte'
+	import EmptyState from '../../components/analytics/EmptyState.svelte'
 	import { DATE_RANGES } from '../../lib/date-ranges'
 
 	let { site }: { site: Site } = $props()
@@ -145,7 +146,13 @@
 		{:else if error}
 			<div class="py-8 text-center text-muted text-sm">{error}</div>
 		{:else if topRows.length === 0}
-			<div class="py-8 text-center text-muted text-sm">No source data for this period</div>
+			<EmptyState
+				icon="sources"
+				title="No traffic sources yet"
+				message="Source data appears once visitors start arriving at your site from referrers, search engines, or direct links."
+				actionHref={`/sites/${site.id}/analytics/tracking`}
+				actionLabel="View tracking guide"
+			/>
 		{:else}
 			<div class="flex flex-col">
 				{#each topRows as row (row.source)}

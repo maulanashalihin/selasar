@@ -3,6 +3,7 @@
 	import type { Site } from '../../../shared/types'
 	import DateRangePicker from '../../components/analytics/DateRangePicker.svelte'
 	import { DATE_RANGES } from '../../lib/date-ranges'
+	import EmptyState from '../../components/analytics/EmptyState.svelte'
 
 	let { site }: { site: Site } = $props()
 
@@ -104,9 +105,13 @@
 			<p class="text-sm text-muted text-center py-8">{error}</p>
 		</div>
 	{:else if rows.length === 0}
-		<div class="bg-surface shadow-card rounded-radius p-5">
-			<p class="text-sm text-muted text-center py-8">No country data for this period.</p>
-		</div>
+		<EmptyState
+			icon="geography"
+			title="No geography data yet"
+			message="Country and city data will appear here once visitors start browsing your site. Geographic data is derived from IP addresses server-side."
+			actionHref={`/sites/${site.id}/analytics/tracking`}
+			actionLabel="View tracking guide"
+		/>
 	{:else}
 		<div class="grid grid-cols-5 gap-4 mb-6">
 			{#each top5 as row (row.country)}

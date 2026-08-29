@@ -80,7 +80,15 @@
 			{#if loading}
 				<div class="flex flex-col gap-1">{#each Array(5) as _, i (i)}<Skeleton class="h-9 w-full" />{/each}</div>
 			{:else if data?.topPages?.length === 0}
-				<p class="text-muted text-sm py-8 text-center m-0">No active visitors</p>
+<div class="flex flex-col items-center justify-center py-10 text-center">
+  <div class="w-12 h-12 rounded-xl bg-bg flex items-center justify-center mb-3">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted opacity-50" aria-hidden="true">
+      <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" />
+    </svg>
+  </div>
+  <p class="text-sm text-muted m-0">No active visitors right now</p>
+  <p class="text-xs text-muted mt-1 m-0">Data updates every 30 seconds</p>
+</div>
 			{:else}
 				<div class="flex flex-col gap-1">
 					{#each data?.topPages ?? [] as row (row.page_path)}
@@ -100,7 +108,15 @@
 			{#if loading}
 				<div class="flex flex-col gap-1">{#each Array(5) as _, i (i)}<Skeleton class="h-9 w-full" />{/each}</div>
 			{:else if data?.topSources?.length === 0}
-				<p class="text-muted text-sm py-8 text-center m-0">No active visitors</p>
+<div class="flex flex-col items-center justify-center py-10 text-center">
+  <div class="w-12 h-12 rounded-xl bg-bg flex items-center justify-center mb-3">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted opacity-50" aria-hidden="true">
+      <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" />
+    </svg>
+  </div>
+  <p class="text-sm text-muted m-0">No active visitors right now</p>
+  <p class="text-xs text-muted mt-1 m-0">Data updates every 30 seconds</p>
+</div>
 			{:else}
 				<div class="flex flex-col gap-1">
 					{#each data?.topSources ?? [] as row (row.source)}
@@ -120,7 +136,15 @@
 			{#if loading}
 				<div class="flex flex-col gap-1">{#each Array(5) as _, i (i)}<Skeleton class="h-9 w-full" />{/each}</div>
 			{:else if data?.topCountries?.length === 0}
-				<p class="text-muted text-sm py-8 text-center m-0">No active visitors</p>
+<div class="flex flex-col items-center justify-center py-10 text-center">
+  <div class="w-12 h-12 rounded-xl bg-bg flex items-center justify-center mb-3">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted opacity-50" aria-hidden="true">
+      <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" />
+    </svg>
+  </div>
+  <p class="text-sm text-muted m-0">No active visitors right now</p>
+  <p class="text-xs text-muted mt-1 m-0">Data updates every 30 seconds</p>
+</div>
 			{:else}
 				<div class="flex flex-col gap-1">
 					{#each data?.topCountries ?? [] as row (row.country)}
@@ -140,7 +164,15 @@
 			{#if loading}
 				<div class="flex flex-col gap-1">{#each Array(5) as _, i (i)}<Skeleton class="h-9 w-full" />{/each}</div>
 			{:else if data?.topDevices?.length === 0}
-				<p class="text-muted text-sm py-8 text-center m-0">No active visitors</p>
+<div class="flex flex-col items-center justify-center py-10 text-center">
+  <div class="w-12 h-12 rounded-xl bg-bg flex items-center justify-center mb-3">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted opacity-50" aria-hidden="true">
+      <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" />
+    </svg>
+  </div>
+  <p class="text-sm text-muted m-0">No active visitors right now</p>
+  <p class="text-xs text-muted mt-1 m-0">Data updates every 30 seconds</p>
+</div>
 			{:else}
 				<div class="flex flex-col gap-1">
 					{#each data?.topDevices ?? [] as row (row.device)}
