@@ -11,9 +11,9 @@
 <main class="min-h-screen flex items-center justify-center bg-bg p-8">
   <div class="text-center max-w-md mx-auto">
     <Brand href="/" class="justify-center mb-8 text-xl text-primary" />
-    <h1 class="text-[2.5rem] m-0 mb-2">Dulak</h1>
+    <h1 class="text-[2.5rem] m-0 mb-2">Selasar</h1>
     <p class="text-muted mb-8">
-      A Bun + Hono + Inertia + Svelte boilerplate with Cloudflare edge caching.
+      Self-hosted web analytics with ClickHouse. The corridor between data and insight.
     </p>
 
     <div class="flex gap-3 justify-center flex-wrap">

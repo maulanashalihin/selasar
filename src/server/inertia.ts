@@ -248,13 +248,13 @@ export class Inertia {
 	private html(head: string[], body: string, status: number): Response {
 		const headTags = head.filter((h) => h && h.trim().length > 0);
 		const hasTitle = headTags.some((h) => h.includes("<title"));
-		const titleTag = hasTitle ? "" : "<title>Dulak</title>";
+	const titleTag = hasTitle ? "" : "<title>Selasar</title>";
 		const cssTag = this.assets.css
 			? `<link rel="stylesheet" href="/assets/${this.assets.css}" />`
 			: "";
-		const favicon = `<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(
-			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#059669"/><path d="M12 9h2.2c5.6 0 9.3 3.1 9.3 7s-3.7 7-9.3 7H12V9Z" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><rect x="16" y="18.2" width="4.4" height="2.2" rx="1.1" fill="#059669"/></svg>',
-		)}" />`;
+	const favicon = `<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(
+		'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#0f1117"/><rect x="4" y="20" width="3.5" height="6" rx="1" fill="#06B6D4" opacity="0.4"/><rect x="9" y="14" width="3.5" height="12" rx="1" fill="#06B6D4" opacity="0.65"/><rect x="14" y="8" width="3.5" height="18" rx="1" fill="#06B6D4"/><rect x="19" y="14" width="3.5" height="12" rx="1" fill="#06B6D4" opacity="0.65"/><rect x="24" y="20" width="3.5" height="6" rx="1" fill="#06B6D4" opacity="0.4"/></svg>',
+	)}" />`;
 		// Inline script: set data-theme + background-color on <html> before the
 		// external stylesheet loads, so the page paints dark immediately (no FOUC).
 		// Reads localStorage('theme'), falls back to prefers-color-scheme, defaults light.

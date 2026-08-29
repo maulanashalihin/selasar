@@ -80,7 +80,7 @@ const server = Bun.serve({
 	port,
 	fetch: createApp(assets).fetch,
 });
-console.log(`Dulak boilerplate → http://localhost:${port}`);
+console.log(`Selasar → http://localhost:${port}`);
 
 function shutdown(signal: string): void {
 	console.log(`\n${signal} received — shutting down`);
