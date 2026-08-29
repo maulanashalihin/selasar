@@ -301,25 +301,8 @@
 		</div>
 	</div>
 
-	<!-- Metric cards + chart -->
-	<div class="relative w-full bg-surface rounded-radius shadow-card mb-6">
-		<div class="flex relative border-b border-border overflow-x-auto">
-			<MetricCard label="Unique Visitors" value={visitorsValue} delta={visitorsDelta} loading={overviewLoading} selected={selectedMetric === 'visitors'} onclick={() => (selectedMetric = 'visitors')} />
-			<div class="border-l border-border my-3"></div>
-			<MetricCard label="Total Visits" value={visitsValue} delta={visitsDelta} loading={overviewLoading} selected={selectedMetric === 'visits'} onclick={() => (selectedMetric = 'visits')} />
-			<div class="border-l border-border my-3"></div>
-			<MetricCard label="Total Pageviews" value={pageviewsValue} delta={pageviewsDelta} loading={overviewLoading} selected={selectedMetric === 'pageviews'} onclick={() => (selectedMetric = 'pageviews')} />
-			<div class="border-l border-border my-3"></div>
-			<MetricCard label="Views per Visit" value={viewsPerVisit} loading={overviewLoading} selected={selectedMetric === 'views_per_visit'} onclick={() => (selectedMetric = 'views_per_visit')} />
-			<div class="border-l border-border my-3"></div>
-			<MetricCard label="Bounce Rate" value={bounceValue} delta={bounceDelta} loading={overviewLoading} selected={selectedMetric === 'bounce_rate'} onclick={() => (selectedMetric = 'bounce_rate')} />
-			<div class="border-l border-border my-3"></div>
-			<MetricCard label="Visit Duration" value={durationValue} delta={durationDelta} loading={overviewLoading} selected={selectedMetric === 'duration'} onclick={() => (selectedMetric = 'duration')} />
-		</div>
-		<TrafficChart data={trafficData} loading={trafficLoading} metric={selectedMetric === 'visits' ? 'visitors' : selectedMetric === 'views_per_visit' ? 'visitors' : selectedMetric === 'bounce_rate' ? 'visitors' : selectedMetric === 'duration' ? 'visitors' : selectedMetric} />
-	</div>
 
-	{#if breakdownLoading}
+	{#if overviewLoading || breakdownLoading}
 		<div class="flex items-center justify-center py-24">
 			<div class="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary"></div>
 		</div>
@@ -358,6 +341,23 @@
 		<a href={`/sites/${site.id}/analytics/tracking`} class="mt-5 text-sm text-primary hover:text-primary-hover font-medium">View tracking guide →</a>
 		</div>
 	{:else}
+	<!-- Metric cards + chart -->
+	<div class="relative w-full bg-surface rounded-radius shadow-card mb-6">
+		<div class="flex relative border-b border-border overflow-x-auto">
+			<MetricCard label="Unique Visitors" value={visitorsValue} delta={visitorsDelta} loading={overviewLoading} selected={selectedMetric === 'visitors'} onclick={() => (selectedMetric = 'visitors')} />
+			<div class="border-l border-border my-3"></div>
+			<MetricCard label="Total Visits" value={visitsValue} delta={visitsDelta} loading={overviewLoading} selected={selectedMetric === 'visits'} onclick={() => (selectedMetric = 'visits')} />
+			<div class="border-l border-border my-3"></div>
+			<MetricCard label="Total Pageviews" value={pageviewsValue} delta={pageviewsDelta} loading={overviewLoading} selected={selectedMetric === 'pageviews'} onclick={() => (selectedMetric = 'pageviews')} />
+			<div class="border-l border-border my-3"></div>
+			<MetricCard label="Views per Visit" value={viewsPerVisit} loading={overviewLoading} selected={selectedMetric === 'views_per_visit'} onclick={() => (selectedMetric = 'views_per_visit')} />
+			<div class="border-l border-border my-3"></div>
+			<MetricCard label="Bounce Rate" value={bounceValue} delta={bounceDelta} loading={overviewLoading} selected={selectedMetric === 'bounce_rate'} onclick={() => (selectedMetric = 'bounce_rate')} />
+			<div class="border-l border-border my-3"></div>
+			<MetricCard label="Visit Duration" value={durationValue} delta={durationDelta} loading={overviewLoading} selected={selectedMetric === 'duration'} onclick={() => (selectedMetric = 'duration')} />
+		</div>
+		<TrafficChart data={trafficData} loading={trafficLoading} metric={selectedMetric === 'visits' ? 'visitors' : selectedMetric === 'views_per_visit' ? 'visitors' : selectedMetric === 'bounce_rate' ? 'visitors' : selectedMetric === 'duration' ? 'visitors' : selectedMetric} />
+	</div>
 		<!-- Sources: channels donut + full source list -->
 		<div class="bg-surface shadow-card rounded-radius p-5 mb-6">
 			<div class="flex items-center justify-between border-b border-border pb-2 mb-4">
