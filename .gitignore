@@ -14,6 +14,7 @@ data/uploads/
 .llm-wiki/meta/
 store/
 data/
+clickhouse-data/
 .svelte-css-cache/
 site/.astro/
 uuid
