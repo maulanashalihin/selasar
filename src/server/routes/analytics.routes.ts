@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { requireAuth } from "../auth";
 import { chQuery } from "../clickhouse";
 import { findSiteById } from "../db";
+import { config } from "../config";
 import type { AppEnv } from "../inertia-middleware";
 
 /** Parse range param into SQL date filter. */
@@ -127,6 +128,13 @@ export const analyticsRoutes = () => {
 		const site = findSiteById.get(id);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("analytics/Campaigns", { site });
+	});
+
+	app.get("/sites/:id/analytics/tracking", requireAuth, (c) => {
+		const id = Number(c.req.param("id"));
+		const site = findSiteById.get(id);
+		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
+		return c.var.inertia.render("analytics/Tracking", { site, appUrl: config.appUrl });
 	});
 
 	// --- JSON API ---

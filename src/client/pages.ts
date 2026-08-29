@@ -23,6 +23,7 @@ import Geography from "./pages/analytics/Geography.svelte";
 import Pages from "./pages/analytics/Pages.svelte";
 import Realtime from "./pages/analytics/Realtime.svelte";
 import Sources from "./pages/analytics/Sources.svelte";
+import Tracking from "./pages/analytics/Tracking.svelte";
 
 type PageModule = { default: Component<any> };
 export const pages: Record<string, PageModule> = {
@@ -44,6 +45,7 @@ export const pages: Record<string, PageModule> = {
 	"./pages/analytics/Geography.svelte": { default: Geography },
 	"./pages/analytics/Campaigns.svelte": { default: Campaigns },
 	"./pages/analytics/Conversions.svelte": { default: Conversions },
+	"./pages/analytics/Tracking.svelte": { default: Tracking },
 };
 
 /** Fallback for unknown component names — never resolve to undefined. */

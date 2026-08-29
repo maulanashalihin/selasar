@@ -6,7 +6,7 @@
 	import TrafficChart from '../components/analytics/TrafficChart.svelte'
 	import { DATE_RANGES } from '../lib/date-ranges'
 
-	let { site }: { site: Site } = $props()
+	let { site, appUrl = '' }: { site: Site; appUrl?: string } = $props()
 
 	let range = $state('28d')
 	const ranges = DATE_RANGES
@@ -52,6 +52,10 @@
 
 	let liveCount = $state(0)
 	let liveLoading = $state(true)
+	let copied = $state(false)
+	let trackingSnippet = $derived(
+		`<script async defer src="${appUrl || 'https://your-selasar-instance.com'}/tracker.js" data-tracking-id="${site.trackingId}"><\/script>`,
+	)
 
 	// Derived display values
 	let visitorsDelta = $derived(overview?.changes?.visitors ?? null)
@@ -158,6 +162,16 @@
 		const s = totalSec % 60
 		if (m === 0) return `${s}s`
 		return `${m}m ${s}s`
+	}
+
+	async function copyTracking() {
+		try {
+			await navigator.clipboard.writeText(trackingSnippet)
+			copied = true
+			setTimeout(() => (copied = false), 2000)
+		} catch {
+			/* clipboard unavailable */
+		}
 	}
 
 	async function fetchOverview(silent = false) {
@@ -308,6 +322,40 @@
 	{#if breakdownLoading}
 		<div class="flex items-center justify-center py-24">
 			<div class="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary"></div>
+		</div>
+	{:else if !hasData}
+		<!-- Empty state: no data yet -->
+		<div class="bg-surface shadow-card rounded-radius p-12 mb-6 flex flex-col items-center justify-center text-center">
+			<div class="w-16 h-16 rounded-2xl bg-bg flex items-center justify-center mb-5">
+				<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-muted" aria-hidden="true">
+					<path d="M3 3v18h18" />
+					<path d="M7 14l4-4 4 4 6-6" />
+				</svg>
+			</div>
+			<h2 class="text-lg font-semibold m-0 mb-2">No data yet</h2>
+			<p class="text-sm text-muted m-0 mb-6 max-w-sm">
+				Install the tracker on your site to start collecting analytics. It takes less than a minute.
+			</p>
+		<div class="bg-bg rounded-lg max-w-lg w-full text-left overflow-hidden">
+			<div class="flex items-center justify-between px-4 py-2.5 border-b border-border">
+				<p class="text-xs font-semibold text-muted uppercase tracking-wide m-0">Tracker Installation</p>
+				<button
+					type="button"
+					class="text-xs font-medium text-muted hover:text-text transition-colors flex items-center gap-1"
+					onclick={copyTracking}
+				>
+					{#if copied}
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+						Copied
+					{:else}
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+						Copy
+					{/if}
+				</button>
+			</div>
+			<pre class="p-4 overflow-x-auto text-sm text-text m-0 font-mono leading-relaxed"><code>{trackingSnippet}</code></pre>
+		</div>
+		<a href={`/sites/${site.id}/analytics/tracking`} class="mt-5 text-sm text-primary hover:text-primary-hover font-medium">View tracking guide →</a>
 		</div>
 	{:else}
 		<!-- Sources: channels donut + full source list -->

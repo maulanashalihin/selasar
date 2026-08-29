@@ -98,7 +98,7 @@ export const siteRoutes = () => {
 		const id = Number(c.req.param("id"));
 		const site = findSiteById.get(id);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
-		return c.var.inertia.render("Analytics", { site });
+		return c.var.inertia.render("Analytics", { site, appUrl: config.appUrl });
 	});
 
 	// --- JSON API ---

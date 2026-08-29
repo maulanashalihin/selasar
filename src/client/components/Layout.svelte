@@ -97,6 +97,7 @@
 					{ href: `/sites/${siteId()}/analytics/devices`, label: 'Devices', icon: 'devices', match: (p) => p.startsWith('/sites/') && p.includes('/analytics/devices') },
 					{ href: `/sites/${siteId()}/analytics/geography`, label: 'Geography', icon: 'geography', match: (p) => p.startsWith('/sites/') && p.includes('/analytics/geography') },
 				{ href: `/sites/${siteId()}/analytics/conversions`, label: 'Conversions', icon: 'conversions', match: (p) => p.startsWith('/sites/') && p.includes('/analytics/conversions') },
+				{ href: `/sites/${siteId()}/analytics/tracking`, label: 'Tracking', icon: 'tracking', match: (p) => p.startsWith('/sites/') && p.includes('/analytics/tracking') },
 				{ href: `/sites/${siteId()}`, label: 'Settings', icon: 'settings', match: (p) => /^\/sites\/\d+$/.test(p) },
 			]
 			: [],
@@ -233,6 +234,11 @@
 											<circle cx="12" cy="12" r="6" />
 											<circle cx="12" cy="12" r="2" />
 										</svg>
+								{:else if item.icon === 'tracking'}
+									<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+										<rect x="2" y="3" width="20" height="14" rx="2" />
+										<path d="M8 21h8 M12 17v4" />
+									</svg>
 								{:else if item.icon === 'settings'}
 									<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 										<circle cx="12" cy="12" r="3" />
