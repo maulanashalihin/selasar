@@ -14,6 +14,7 @@ import Profile from "./pages/Profile.svelte";
 import ResetPassword from "./pages/ResetPassword.svelte";
 import Sites from "./pages/Sites.svelte";
 import SiteSettings from "./pages/SiteSettings.svelte";
+import SiteNew from "./pages/SiteNew.svelte";
 import ApiKeys from "./pages/ApiKeys.svelte";
 import AdminUsers from "./pages/admin/Users.svelte";
 import Conversions from "./pages/analytics/Conversions.svelte";
@@ -35,6 +36,7 @@ export const pages: Record<string, PageModule> = {
 	"./pages/Profile.svelte": { default: Profile },
 	"./pages/ResetPassword.svelte": { default: ResetPassword },
 	"./pages/Sites.svelte": { default: Sites },
+	"./pages/SiteNew.svelte": { default: SiteNew },
 	"./pages/SiteSettings.svelte": { default: SiteSettings },
 	"./pages/admin/Users.svelte": { default: AdminUsers },
 	"./pages/ApiKeys.svelte": { default: ApiKeys },

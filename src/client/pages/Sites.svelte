@@ -1,124 +1,12 @@
 <script lang="ts">
-  import { Link, router } from '@inertiajs/svelte'
+  import { Link } from '@inertiajs/svelte'
   import Layout from '../components/Layout.svelte'
   import type { Site } from '../../shared/types'
 
   let { sites }: { sites: Site[] } = $props()
 
-  let showForm = $state(false)
-  let name = $state('')
-  let timezone = $state('UTC')
-  let domain = $state('')
-  let submitting = $state(false)
-  let error = $state<string | null>(null)
-  let nameError = $state<string | null>(null)
-  let domainError = $state<string | null>(null)
   let copiedId = $state<number | null>(null)
 
-  const inputClass =
-    'w-full px-3 py-2.5 border border-border rounded-lg bg-bg text-text text-[0.95rem] focus:outline-2 focus:outline-primary focus:-outline-offset-1 focus:border-primary'
-
-  const TIMEZONES = [
-    'UTC',
-    'America/New_York',
-    'America/Chicago',
-    'America/Denver',
-    'America/Los_Angeles',
-    'America/Sao_Paulo',
-    'Europe/London',
-    'Europe/Paris',
-    'Europe/Berlin',
-    'Europe/Madrid',
-    'Africa/Johannesburg',
-    'Africa/Lagos',
-    'Africa/Nairobi',
-    'Asia/Dubai',
-    'Asia/Kolkata',
-    'Asia/Bangkok',
-    'Asia/Jakarta',
-    'Asia/Shanghai',
-    'Asia/Tokyo',
-    'Asia/Singapore',
-    'Australia/Sydney',
-    'Pacific/Auckland',
-  ]
-
-  const DOMAIN_RE = /^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/
-
-  function openForm() {
-    showForm = true
-  }
-
-  function closeForm() {
-    showForm = false
-    resetForm()
-  }
-
-  function resetForm() {
-    name = ''
-    timezone = 'UTC'
-    domain = ''
-    error = null
-    nameError = null
-    domainError = null
-  }
-
-  function normalizeDomain(raw: string): string {
-    return raw
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, '')
-      .replace(/^www\./, '')
-      .replace(/\/$/, '')
-  }
-
-  function validate(): boolean {
-    nameError = null
-    domainError = null
-    let ok = true
-    if (!name.trim()) {
-      nameError = 'Site name is required.'
-      ok = false
-    }
-    const d = normalizeDomain(domain)
-    if (!d) {
-      domainError = 'Domain is required.'
-      ok = false
-    } else if (!DOMAIN_RE.test(d)) {
-      domainError = 'Enter a valid domain, e.g. example.com'
-      ok = false
-    }
-    return ok
-  }
-
-  async function submit(e: SubmitEvent) {
-    e.preventDefault()
-    error = null
-    if (!validate()) return
-    submitting = true
-    try {
-      const res = await fetch('/api/sites', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          timezone: timezone.trim() || 'UTC',
-          domains: [normalizeDomain(domain)],
-        }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        error = body?.error ?? 'Failed to create site.'
-        submitting = false
-        return
-      }
-      const data = await res.json()
-      router.visit(`/sites/${data.id}`)
-    } catch {
-      error = 'Network error. Please try again.'
-      submitting = false
-    }
-  }
 
   async function copyTrackingId(site: Site) {
     try {
@@ -155,93 +43,15 @@
         {sites.length} {sites.length === 1 ? 'site' : 'sites'} tracking
       </p>
     </div>
-    {#if !showForm}
-      <button class="btn btn-primary" onclick={openForm}>
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="inline-block">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-        New Site
-      </button>
-    {/if}
+    <Link href="/sites/new" class="btn btn-primary no-underline">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="inline-block">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      New Site
+    </Link>
   </div>
 
-  {#if showForm}
-    <form
-      onsubmit={submit}
-      novalidate
-      class="bg-surface border border-border rounded-radius p-6 mb-6 shadow-card"
-    >
-      <div class="flex items-center justify-between mb-5">
-        <h2 class="text-lg font-semibold m-0">Create a new site</h2>
-        <button type="button" class="text-muted hover:text-text text-sm" onclick={closeForm}>Cancel</button>
-      </div>
-
-      {#if error}
-        <div class="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm mb-4">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="shrink-0">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 8v4M12 16h.01" />
-          </svg>
-          {error}
-        </div>
-      {/if}
-
-      <div class="grid gap-4 mb-5">
-        <div>
-          <label for="site-name" class="block text-sm font-medium mb-1.5">
-            Site Name
-            <span class="text-danger" aria-label="required">*</span>
-          </label>
-          <input
-            id="site-name"
-            class={inputClass}
-            class:!border-danger={!!nameError}
-            bind:value={name}
-            placeholder="My Website"
-            onchange={() => (nameError = null)}
-          />
-          {#if nameError}
-            <p class="text-danger text-xs mt-1.5" role="alert">{nameError}</p>
-          {/if}
-        </div>
-
-        <div>
-          <label for="site-domain" class="block text-sm font-medium mb-1.5">
-            Domain
-            <span class="text-danger" aria-label="required">*</span>
-          </label>
-          <input
-            id="site-domain"
-            class={inputClass}
-            class:!border-danger={!!domainError}
-            bind:value={domain}
-            placeholder="example.com"
-            onchange={() => (domainError = null)}
-          />
-          {#if domainError}
-            <p class="text-danger text-xs mt-1.5" role="alert">{domainError}</p>
-          {/if}
-          <p class="text-muted text-xs mt-1.5">The domain tracking events will come from.</p>
-        </div>
-
-        <div>
-          <label for="site-tz" class="block text-sm font-medium mb-1.5">Timezone</label>
-          <select id="site-tz" class={inputClass} bind:value={timezone}>
-            {#each TIMEZONES as tz (tz)}
-              <option value={tz}>{tz}</option>
-            {/each}
-          </select>
-          <p class="text-muted text-xs mt-1.5">Used for date boundaries in reports.</p>
-        </div>
-      </div>
-
-      <button class="btn btn-primary" type="submit" disabled={submitting}>
-        {submitting ? 'Creating…' : 'Create Site'}
-      </button>
-    </form>
-  {/if}
-
-  {#if sites.length === 0 && !showForm}
+  {#if sites.length === 0}
     <div class="bg-surface border border-border rounded-radius p-12 text-center">
       <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary-soft text-primary mb-4">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -251,8 +61,7 @@
         </svg>
       </div>
       <h2 class="text-lg font-semibold m-0 mb-1">No sites yet</h2>
-      <p class="text-muted text-sm m-0 mb-5">Create your first site to start tracking analytics.</p>
-      <button class="btn btn-primary" onclick={openForm}>Create your first site</button>
+      <Link href="/sites/new" class="btn btn-primary no-underline">Create your first site</Link>
     </div>
   {:else if sites.length > 0}
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

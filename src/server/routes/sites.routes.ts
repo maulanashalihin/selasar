@@ -87,6 +87,10 @@ export const siteRoutes = () => {
 		return c.var.inertia.render("Sites", { sites });
 	});
 
+	app.get("/sites/new", requireAuth, (c) => {
+		return c.var.inertia.render("SiteNew", {});
+	});
+
 	app.get("/sites/:id", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
 		const site = siteWithDomains(id);
