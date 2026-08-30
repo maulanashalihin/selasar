@@ -52,8 +52,9 @@ cd selasar
 # Install
 bun install
 
-# Start ClickHouse
-clickhouse server --daemon
+# Start ClickHouse (pick one)
+clickhouse server --daemon          # native install
+# docker compose up clickhouse -d   # OR via Docker
 
 # Configure
 cp .env.example .env
@@ -64,8 +65,7 @@ bun run ch:init
 # Seed demo user (SQLite migrations run automatically on server startup)
 bun run db:seed
 
-# Seed ClickHouse demo data
-bun run scripts/seed-clickhouse.ts
+bun run ch:seed
 
 # Run (dev mode with auto-reload)
 bun run dev

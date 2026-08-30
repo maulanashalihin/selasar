@@ -16,6 +16,7 @@
     "start": "NODE_ENV=production bun run src/index.ts",
     "db:seed": "bun run scripts/seed.ts",
     "ch:init": "bun run scripts/init-clickhouse.ts",
+    "ch:seed": "bun run scripts/seed-clickhouse.ts",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "lint": "biome lint src tests scripts",
     "test": "bun test --isolate"
