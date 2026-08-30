@@ -7,11 +7,34 @@ services:
     environment:
       NODE_ENV: production
       APP_URL: ${APP_URL:-http://localhost:4000}
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_DB: analytics
     volumes:
-      - ./data:/app/data # persistent SQLite database
+      - ./data:/app/data # persistent SQLite database + uploads
+    depends_on:
+      clickhouse:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT:-4000}/health"]
       interval: 30s
       timeout: 5s
       retries: 3
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8-alpine
+    ports:
+      - "8123:8123" # HTTP interface (queries + inserts)
+      - "9000:9000" # Native protocol (optional)
+    volumes:
+      - ./clickhouse-data:/var/lib/clickhouse # persistent analytics data
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped

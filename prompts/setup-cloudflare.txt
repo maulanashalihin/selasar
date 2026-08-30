@@ -12,7 +12,7 @@
 # For APP_PORT, use the port the app is actually running on
 # (check deploy.env or the deploy output).
 
-Set up Cloudflare as the reverse proxy for my Dulak app. Here are
+Set up Cloudflare as the reverse proxy for my Selasar app. Here are
 the details:
 
 - Cloudflare API token: CLOUDFLARE_API_TOKEN

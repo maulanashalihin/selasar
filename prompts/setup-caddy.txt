@@ -7,7 +7,7 @@
 #   your-domain.com → your domain
 #   APP_PORT        → the port the app is running on (check deploy.env or deploy output)
 
-Set up Caddy as the reverse proxy for my Dulak app with automatic
+Set up Caddy as the reverse proxy for my Selasar app with automatic
 TLS via Let's Encrypt. Here are the details:
 
 - Domain: your-domain.com

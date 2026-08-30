@@ -8,8 +8,8 @@
  * response (s-maxage=300, SWR=600). The client fetches user identity via
  * `GET /api/session` after hydration.
  *
- * GA Analytics: /dashboard and /admin are legacy Dulak routes that now
- * redirect to their new locations (/sites and /admin/users respectively).
+ * /dashboard and /admin are legacy routes that redirect to their new
+ * locations (/sites and /admin/users respectively).
  */
 import { Hono } from "hono";
 import { requireAuth, requireRole } from "../auth";
@@ -25,7 +25,7 @@ export const pageRoutes = () => {
 		c.var.inertia.render("Home", {}, { public: true }),
 	);
 
-	// Legacy Dulak routes → redirect to GA Analytics routes.
+	// Legacy routes → redirect to Selasar routes.
 	app.get("/dashboard", requireAuth, (c) =>
 		c.var.inertia.redirect("/sites"),
 	);

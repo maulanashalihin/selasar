@@ -17,13 +17,13 @@ COPY --from=build /app/dist ./dist
 COPY src ./src
 COPY migrations ./migrations
 COPY scripts ./scripts
-COPY docker-entrypoint.sh /usr/local/bin/dulak-entrypoint.sh
-RUN chmod +x /usr/local/bin/dulak-entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/selasar-entrypoint.sh
+RUN chmod +x /usr/local/bin/selasar-entrypoint.sh
 # /app/data is the SQLite + uploads volume (bind-mounted in compose).
 # Pre-create with bun ownership; the entrypoint re-fixes after the mount.
 RUN mkdir -p /app/data && chown -R bun:bun /app
 EXPOSE 4000
 # Container starts as root so the entrypoint can fix bind-mount ownership,
 # then drops to the non-root bun user (UID 1000) before exec'ing the app.
-ENTRYPOINT ["/usr/local/bin/dulak-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/selasar-entrypoint.sh"]
 CMD ["bun", "run", "src/index.ts"]

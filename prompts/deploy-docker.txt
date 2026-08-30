@@ -5,21 +5,21 @@
 #
 # Placeholders to replace:
 #   USER@SERVER_IP       → your SSH login (e.g. root@203.0.113.5)
-#   YOUR_USER/YOUR_REPO  → your GitHub repo (e.g. maulanashalihin/dulak)
+#   YOUR_USER/YOUR_REPO  → your GitHub repo (e.g. maulanashalihin/selasar)
 #   your-domain.com      → your domain (or "none" if no domain yet)
-#   /opt/dulak           → where to install on the server (or keep as-is)
+#   /opt/selasar           → where to install on the server (or keep as-is)
 #   APP_PORT             → pick a port (e.g. 4000, 8084, 9090)
 #
 # Security: the container starts as root only to fix the ./data bind-mount
 # ownership, then drops to a non-root user (bun, UID 1000) before the app
 # starts. No manual permission setup needed — the entrypoint handles it.
 
-Deploy my Dulak app on my VPS using Docker. Here are the details:
+Deploy my Selasar app on my VPS using Docker. Here are the details:
 
 - SSH: ssh USER@SERVER_IP
 - GitHub repo: https://github.com/YOUR_USER/YOUR_REPO.git
 - Domain: your-domain.com (or "none" if no domain yet)
-- Install path: /opt/dulak
+- Install path: /opt/selasar
 - App port: APP_PORT
 
 Steps:

@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Dulak boilerplate — design tokens + keyframes only.
+   Selasar — design tokens + keyframes only.
    All component styling is done via Tailwind utility classes in the Svelte
    components. This file defines the CSS custom properties that Tailwind's
    @theme inline (in tailwind.css) bridges to utility tokens, plus two

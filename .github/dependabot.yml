@@ -10,11 +10,10 @@ updates:
     commit-message:
       prefix: "deps"
     groups:
-      react:
+      svelte:
         patterns:
-          - "react"
-          - "react-dom"
-          - "@inertiajs/react"
+          - "svelte"
+          - "@inertiajs/svelte"
           - "@inertiajs/core"
       hono:
         patterns:
@@ -23,8 +22,12 @@ updates:
         patterns:
           - "@biomejs/*"
           - "@types/*"
-          - "typescript"
-          - "bun"
+          - "tailwindcss"
+          - "@tailwindcss/cli"
+          - "svelte-check"
+      typebox:
+        patterns:
+          - "@sinclair/typebox"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

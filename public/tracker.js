@@ -2,7 +2,7 @@
  * tracker.js — lightweight analytics tracker (~3KB minified).
  * Auto-tracks pageviews, heartbeats, exits. No cookies, no PII.
  *
- * Install: <script async defer src="https://analytics.dulak.pages.dev/tracker.js"
+ * Install: <script async defer src="https://your-selasar-instance.com/tracker.js"
  *           data-tracking-id="YOUR-TRACKING-ID"></script>
  *
  * Custom events: analytics.track('signup_click', { plan: 'pro' });
