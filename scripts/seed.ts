@@ -4,7 +4,7 @@
  * Example: bun run db:seed admin@example.com admin123 admin
  */
 import { hashPassword } from '../src/server/auth'
-import { createUserWithRole, findUserByEmail } from '../src/server/db'
+import { addDomain, createSite, createUserWithRole, findUserByEmail, setPrimaryDomain } from '../src/server/db'
 
 const email = process.argv[2] ?? 'demo@example.com'
 const password = process.argv[3] ?? 'password123'
@@ -21,5 +21,16 @@ if (findUserByEmail.get(email)) {
 }
 
 const passwordHash = await hashPassword(password)
-createUserWithRole.get('Demo User', email, passwordHash, role)
+const user = createUserWithRole.get('Demo User', email, passwordHash, role)
+
+// Create a demo site so the dashboard isn't empty on first login.
+// The ClickHouse seed (seed-clickhouse.ts) generates 250k events for site_id=1.
+const trackingId = crypto.randomUUID()
+if (!user) { console.error('Failed to create user.'); process.exit(1) }
+const site = createSite.get(user.id, 'Demo Site', trackingId, 'UTC')
+if (site) {
+  addDomain.get(site.id, 'test.com')
+  setPrimaryDomain.run('test.com', site.id)
+  console.log(`Created demo site "Demo Site" (id=${site.id}, domain=test.com, tracking_id=${trackingId})`)
+}
 console.log(`Seeded ${email} (password: ${password}, role: ${role})`)
