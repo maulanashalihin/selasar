@@ -5,12 +5,15 @@
 
   let { email, token }: { email: string; token: string } = $props()
 
-  const form = useForm({
-    email: email,
-    token: token,
-    password: '',
-    passwordConfirmation: '',
-  })
+  function createForm() {
+    return useForm({
+      email: email,
+      token: token,
+      password: '',
+      passwordConfirmation: '',
+    })
+  }
+  const form = createForm()
 
   function submit(e: SubmitEvent) {
     e.preventDefault()

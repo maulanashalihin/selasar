@@ -7,9 +7,18 @@
   let { site }: { site: SiteWithDomains; appUrl?: string } = $props()
 
   // --- General settings form -------------------------------------------
-  let name = $state(site.name)
-  let timezone = $state(site.timezone)
-  let autoAcceptDomains = $state(site.autoAcceptDomains)
+  function initialFormValues() {
+    return {
+      name: site.name,
+      timezone: site.timezone,
+      autoAcceptDomains: site.autoAcceptDomains,
+    }
+  }
+  const initial = initialFormValues()
+  let name = $state(initial.name)
+  let timezone = $state(initial.timezone)
+  let autoAcceptDomains = $state(initial.autoAcceptDomains)
+
   let saving = $state(false)
   let generalMsg = $state<string | null>(null)
   let generalErr = $state<string | null>(null)

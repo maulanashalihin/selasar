@@ -4,8 +4,8 @@
  * Resolves tracking_id → site_id, validates domain, inserts to ClickHouse.
  */
 import { Hono } from "hono";
-import { findSiteByTrackingId, isDomainRegistered } from "../db";
-import { chInsert } from "../clickhouse";
+import { addDomain, findSiteByTrackingId, isDomainRegistered } from "../db";
+import { chInsert, chQuery } from "../clickhouse";
 import type { AppEnv } from "../inertia-middleware";
 
 /** Parse User-Agent into device + browser (zero-dependency, 10 lines). */
@@ -114,13 +114,15 @@ export const eventRoutes = () => {
 		const domain = getDomainFromReferer(origin) || getDomainFromReferer(body.referrer || "");
 
 		// Domain validation (unless auto_accept_domains is on).
-		if (domain && Number(site.autoAcceptDomains) !== 1) {
+		if (domain) {
 			const registered = isDomainRegistered.get(site.id, domain);
-			if (!registered) return c.json({ error: "Domain not registered" }, 403);
+			if (!registered) {
+				if (Number(site.autoAcceptDomains) !== 1) {
+					return c.json({ error: "Domain not registered" }, 403);
+				}
+				addDomain.run(site.id, domain);
+			}
 		}
-
-		// Auto-register domain if auto_accept_domains is on.
-		// (Domain will be added by a separate mechanism — here we just accept.)
 
 		const ua = c.req.header("user-agent") || "";
 		const ip = c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "0.0.0.0";
@@ -138,6 +140,11 @@ export const eventRoutes = () => {
 		const sessionId = await hashSessionId(visitorId, ts);
 
 		const eventName = body.type === "pageview" ? "pageview" : body.type === "custom" ? (body.event_name || "custom") : body.type;
+		const [existing] = await chQuery<{ visitor_exists: number; session_pv_exists: number }>(
+			`SELECT (SELECT 1 FROM events WHERE site_id = ${site.id} AND visitor_id = '${visitorId}' LIMIT 1) AS visitor_exists, (SELECT 1 FROM events WHERE site_id = ${site.id} AND session_id = '${sessionId}' AND event_name = 'pageview' LIMIT 1) AS session_pv_exists`,
+		);
+		const isNewVisitor = existing?.visitor_exists ? 0 : 1;
+		const isBounce = eventName === "pageview" && !existing?.session_pv_exists ? 1 : 0;
 
 		const row = {
 			site_id: site.id,
@@ -154,9 +161,10 @@ export const eventRoutes = () => {
 			device,
 			browser,
 			country,
-			city: "",
+			city: c.req.header("cf-ipcity") || "",
 			duration_ms: body.duration_ms ?? 0,
-			is_new_visitor: 0, // TODO: check if visitor_id seen today
+			is_new_visitor: isNewVisitor,
+			is_bounce: isBounce,
 			os: body.os || "Unknown",
 			utm_campaign: body.utm_campaign || "",
 			utm_content: body.utm_content || "",

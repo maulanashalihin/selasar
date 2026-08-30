@@ -2,7 +2,19 @@
  * Sites API unit tests — site CRUD, domain management, primary domain.
  * Uses in-memory SQLite + app.request() (same pattern as app.test.ts).
  */
-import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it, mock } from "bun:test";
+
+const chQueryCalls: string[] = [];
+let chQueryThrows = false;
+mock.module("../src/server/clickhouse", () => ({
+	chQuery: async (sql: string) => {
+		if (chQueryThrows) throw new Error("ClickHouse unavailable");
+		chQueryCalls.push(sql);
+		return [];
+	},
+	chInsert: async () => {},
+	chPing: async () => true,
+}));
 
 let app: Awaited<ReturnType<typeof import("../src/server/app")["createApp"]>>;
 let userCookie: string;
@@ -225,5 +237,87 @@ describe("sites API", () => {
 		expect(res.status).toBe(200);
 		const data = await res.json();
 		expect(data.sites.length).toBeGreaterThanOrEqual(1);
+	});
+});
+
+describe("sites API — ClickHouse cleanup on delete", () => {
+	it("site delete triggers ClickHouse cleanup", async () => {
+		const create = await api("/api/sites", {
+			method: "POST",
+			cookie: userCookie,
+			body: { name: "CH Cleanup Site", timezone: "UTC", domains: ["ch-cleanup.com"] },
+		});
+		const siteId = (await create.json()).id;
+
+		chQueryCalls.length = 0;
+		const res = await api(`/api/sites/${siteId}`, {
+			method: "DELETE",
+			cookie: userCookie,
+		});
+		expect(res.status).toBe(200);
+		const data = await res.json();
+		expect(data.ok).toBe(true);
+		expect(
+			chQueryCalls.some(
+				(sql) =>
+					sql.includes("ALTER TABLE events DELETE") &&
+					sql.includes(`site_id = ${siteId}`),
+			),
+		).toBe(true);
+	});
+
+	it("site delete succeeds even if ClickHouse cleanup fails", async () => {
+		chQueryThrows = true;
+		try {
+			const create = await api("/api/sites", {
+				method: "POST",
+				cookie: userCookie,
+				body: { name: "CH Fail Site", timezone: "UTC", domains: ["ch-fail.com"] },
+			});
+			const siteId = (await create.json()).id;
+
+			const res = await api(`/api/sites/${siteId}`, {
+				method: "DELETE",
+				cookie: userCookie,
+			});
+			expect(res.status).toBe(200);
+			const data = await res.json();
+			expect(data.ok).toBe(true);
+		} finally {
+			chQueryThrows = false;
+		}
+	});
+});
+
+describe("sites API — auto_accept_domains toggle", () => {
+	it("updates auto_accept_domains via PATCH", async () => {
+		const create = await api("/api/sites", {
+			method: "POST",
+			cookie: userCookie,
+			body: { name: "Auto Accept Site", timezone: "UTC", domains: ["auto-accept.com"] },
+		});
+		const siteId = (await create.json()).id;
+
+		const res = await api(`/api/sites/${siteId}`, {
+			method: "PATCH",
+			cookie: userCookie,
+			body: { name: "Auto Accept Site", timezone: "UTC", auto_accept_domains: 1 },
+		});
+		expect(res.status).toBe(200);
+
+		const detail = await (await api(`/api/sites/${siteId}`, { cookie: userCookie })).json();
+		expect(Number(detail.site.autoAcceptDomains)).toBe(1);
+	});
+
+	it("auto_accept_domains defaults to false", async () => {
+		const create = await api("/api/sites", {
+			method: "POST",
+			cookie: userCookie,
+			body: { name: "Default Toggle Site", timezone: "UTC", domains: ["default-toggle.com"] },
+		});
+		const siteId = (await create.json()).id;
+
+		const detail = await (await api(`/api/sites/${siteId}`, { cookie: userCookie })).json();
+		expect(Number(detail.site.autoAcceptDomains)).toBe(0);
 	});
 });

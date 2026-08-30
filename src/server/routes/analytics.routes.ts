@@ -42,6 +42,7 @@ function rangeFilter(range: string, from?: string, to?: string): string {
 		case "all":
 			return `1=1`;
 	}
+	return `1=1`;
 }
 
 /** Previous period filter for trend comparison. */
@@ -158,9 +159,9 @@ export const analyticsRoutes = () => {
 	}>(
 		`SELECT
 			uniq(visitor_id) AS visitors,
-			uniq(session_id) AS visits,
-			countIf(event_name = 'pageview') AS pageviews,
-			sum(is_bounce) AS bounces,
+		uniq(session_id) AS visits,
+		countIf(event_name = 'pageview') AS pageviews,
+		(SELECT count() FROM (SELECT session_id FROM events WHERE site_id = ${siteId} AND ${rf} AND event_name = 'pageview' GROUP BY session_id HAVING count() = 1)) AS bounces,
 			sum(duration_ms) AS total_duration
 		FROM events
 		WHERE site_id = ${siteId} AND ${rf}`,
@@ -179,7 +180,7 @@ export const analyticsRoutes = () => {
 			uniq(visitor_id) AS visitors,
 			uniq(session_id) AS visits,
 			countIf(event_name = 'pageview') AS pageviews,
-			sum(is_bounce) AS bounces,
+		(SELECT count() FROM (SELECT session_id FROM events WHERE site_id = ${siteId} AND ${prevRf} AND event_name = 'pageview' GROUP BY session_id HAVING count() = 1)) AS bounces,
 			sum(duration_ms) AS total_duration
 		FROM events
 		WHERE site_id = ${siteId} AND ${prevRf}`,

@@ -82,7 +82,7 @@
 	type NavItem = {
 		href: string
 		label: string
-		icon: 'overview' | 'realtime' | 'pages' | 'sources' | 'devices' | 'geography' | 'conversions' | 'sites' | 'keys' | 'profile' | 'users'
+		icon: 'overview' | 'realtime' | 'pages' | 'sources' | 'devices' | 'geography' | 'conversions' | 'tracking' | 'settings' | 'sites' | 'keys' | 'profile' | 'users'
 		match: (path: string) => boolean
 		roles?: Role[]
 	}

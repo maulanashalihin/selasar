@@ -29,7 +29,7 @@
 		'linear-gradient(90deg, oklch(0.6 0.18 160), oklch(0.6 0.14 200))', // emerald → teal
 	]
 	function gradient(i: number): string {
-		return GRADIENTS[i % GRADIENTS.length]
+		return GRADIENTS[i % GRADIENTS.length] ?? ''
 	}
 
 	async function fetchCampaigns() {

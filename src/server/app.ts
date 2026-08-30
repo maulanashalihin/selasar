@@ -129,7 +129,7 @@ export function createApp(assets: InertiaAssets) {
 			isUploads
 				? `script-src 'none'`
 				: `script-src 'self' 'nonce-${nonce}'`,
-			`style-src 'self' 'unsafe-inline'`,
+		`style-src 'self' 'nonce-${nonce}'`,
 			`img-src 'self' data: https://icons.duckduckgo.com https://www.google.com https://*.gstatic.com`,
 			`font-src 'self'`,
 			`connect-src 'self'`,
@@ -275,6 +275,7 @@ export function createApp(assets: InertiaAssets) {
 	app.route("/", analyticsRoutes());
 	app.route("/", eventRoutes());
 	app.route("/", apiKeyRoutes());
+	app.route("/", profileRoutes());
 
 	return app;
 }

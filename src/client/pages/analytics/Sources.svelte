@@ -172,9 +172,9 @@
 							alt=""
 							class="w-4 h-4 rounded-sm relative z-10"
 							onerror={(e) => {
-								const svg = e.currentTarget.nextElementSibling
+								const svg = e.currentTarget.nextElementSibling as HTMLElement | null
 								if (svg) svg.style.display = 'block'
-								e.currentTarget.style.display = 'none'
+								;(e.currentTarget as HTMLElement).style.display = 'none'
 							}}
 						/>
 						<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="text-muted relative z-10" style="display:none" aria-hidden="true">

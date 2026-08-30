@@ -251,7 +251,7 @@
 					/>
 					<circle
 						cx={xAt(hoverIndex)}
-						cy={yAt(hoveredValue)}
+					cy={yAt(hoveredValue ?? 0)}
 						r="4"
 						fill="var(--primary)"
 						stroke="var(--surface)"
@@ -301,7 +301,7 @@
 				<div class="font-semibold text-text">{formatTooltipDate(hoveredPoint.date)}</div>
 				<div class="mt-0.5 flex items-center gap-1.5 text-muted">
 					<span class="h-2 w-2 rounded-sm bg-primary"></span>
-					<span class="tabular-nums">{hoveredValue.toLocaleString()} {metric === 'visitors' ? 'visitors' : 'pageviews'}</span>
+					<span class="tabular-nums">{(hoveredValue ?? 0).toLocaleString()} {metric === 'visitors' ? 'visitors' : 'pageviews'}</span>
 				</div>
 			</div>
 		{/if}

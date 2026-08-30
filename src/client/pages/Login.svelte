@@ -36,9 +36,9 @@
       Log in with Google
     </a>
     <div class="flex items-center gap-3 text-muted text-xs my-5">
-      <span class="flex-1 h-px bg-border" />
+      <span class="flex-1 h-px bg-border"></span>
       or
-      <span class="flex-1 h-px bg-border" />
+      <span class="flex-1 h-px bg-border"></span>
     </div>
   {/if}
 

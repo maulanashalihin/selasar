@@ -5,6 +5,7 @@
 	import LiveBadge from '../components/analytics/LiveBadge.svelte'
 	import TrafficChart from '../components/analytics/TrafficChart.svelte'
 	import { DATE_RANGES } from '../lib/date-ranges'
+	import type { Site } from '../../shared/types'
 
 	let { site, appUrl = '' }: { site: Site; appUrl?: string } = $props()
 
@@ -401,7 +402,7 @@
 									<circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
 								</svg>
 							{:else}
-								<img src="https://icons.duckduckgo.com/ip3/{row.source}.ico" alt="" class="w-3.5 h-3.5 rounded-sm relative z-10 shrink-0" onerror={(e) => (e.currentTarget.style.display = 'none')} />
+							<img src="https://icons.duckduckgo.com/ip3/{row.source}.ico" alt="" class="w-3.5 h-3.5 rounded-sm relative z-10 shrink-0" onerror={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')} />
 							{/if}
 							<span class="text-sm font-medium relative z-10 truncate flex-1 min-w-0">{row.source}</span>
 							<span class="text-sm tabular-nums text-muted relative z-10 shrink-0 w-10 text-right">{Math.round((Number(row.visitors) / (sourcesTotal || 1)) * 100)}%</span>

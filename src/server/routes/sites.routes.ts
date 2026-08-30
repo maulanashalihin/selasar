@@ -6,6 +6,7 @@ import { Type as t, type Static } from "@sinclair/typebox";
 import { Hono } from "hono";
 import { requireAuth } from "../auth";
 import { config } from "../config";
+import { chQuery } from "../clickhouse";
 import {
 	addDomain,
 	createSite,
@@ -151,10 +152,15 @@ export const siteRoutes = () => {
 		},
 	);
 
-	app.delete("/api/sites/:id", requireAuth, (c) => {
+	app.delete("/api/sites/:id", requireAuth, async (c) => {
 		const id = Number(c.req.param("id"));
 		deleteSite.run(id);
-		// TODO: ClickHouse cleanup — ALTER TABLE events DELETE WHERE site_id = ?
+		// Clean up ClickHouse events for this site.
+		try {
+			await chQuery(`ALTER TABLE events DELETE WHERE site_id = ${id}`);
+		} catch (err) {
+			console.error("[sites] ClickHouse cleanup failed:", err);
+		}
 		return c.json({ ok: true });
 	});
 

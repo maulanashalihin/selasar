@@ -31,7 +31,7 @@ Self-hosted, open-source web analytics with ClickHouse, multi-domain support, an
 | Frontend | Svelte 5 (runes) |
 | Integration | Inertia v3 |
 | Styling | Tailwind v4 |
-| Testing | Buntest (78 tests) |
+| Testing | Buntest (156 tests) |
 
 ## Quick Start
 
@@ -50,10 +50,12 @@ clickhouse server --daemon
 cp .env.example .env
 
 # Initialize ClickHouse schema
-bun run scripts/init-clickhouse.ts
+bun run ch:init
 
-# Migrate SQLite + seed demo data
-bun run migrate
+# Seed demo user (SQLite migrations run automatically on server startup)
+bun run db:seed
+
+# Seed ClickHouse demo data
 bun run scripts/seed-clickhouse.ts
 
 # Run (dev mode with auto-reload)
@@ -174,13 +176,17 @@ scripts/
 public/
 └── tracker.js                     # Event tracker
 
-tests/                              # 78 tests
-├── app.test.ts
-├── sites.test.ts
-├── ingestion.test.ts
-├── analytics.test.ts
-├── admin.test.ts
-└── multi-domain.test.ts
+tests/                              # 156 tests
+├── app.test.ts                # server setup, middleware, routing, auth
+├── sites.test.ts              # site CRUD, domain management, ClickHouse cleanup
+├── ingestion.test.ts          # event ingestion, visitor/bounce detection, UTM
+├── analytics.test.ts          # ClickHouse query endpoints (all 11)
+├── admin.test.ts              # admin user management
+├── multi-domain.test.ts       # multi-domain aggregation
+├── api-keys.test.ts           # API key CRUD
+├── profile.test.ts            # profile info, password, avatar upload
+├── uploads.test.ts            # tus protocol (create/patch/head/delete/get)
+└── pages.test.ts              # page renders, verify-email, tracker.js, OAuth
 ```
 
 ## ClickHouse Schema
@@ -226,8 +232,8 @@ bun run dev
 # Build client assets
 bun run build
 
-# Run tests
-bun test
+# Run tests (must use --isolate for process isolation)
+bun run test
 
 # Lint
 bun run lint

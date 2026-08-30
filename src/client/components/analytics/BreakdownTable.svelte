@@ -13,17 +13,20 @@
 		tabs = [],
 		activeTab = '',
 		seeAllUrl = '',
+		onTabChange,
 	}: {
 		title: string
 		columns: { key: string; label: string }[]
 		rows: Record<string, any>[]
 		total?: number
+		loading?: boolean
 		showFavicon?: boolean
 		showPercentage?: boolean
 		barColor?: 'primary' | 'blue' | 'yellow'
 		tabs?: { value: string; label: string }[]
 	activeTab?: string
 		seeAllUrl?: string
+		onTabChange?: (value: string) => void
 	} = $props()
 
 	let numericKey = $derived.by(() => {
@@ -82,7 +85,7 @@
 
 	function faviconUrl(source: string): string | null {
 		if (!source || source === 'Direct / None' || source === 'Direct' || source === '(direct)') return null
-		const clean = source.replace(/^https?:\/\//, '').split('/')[0]
+		const clean = source.replace(/^https?:\/\//, '').split('/')[0] ?? ''
 		// Skip if not a valid domain (contains spaces, parens, or no dot)
 		if (!clean.includes('.') || clean.includes(' ')) return null
 		return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(clean)}&sz=32`
