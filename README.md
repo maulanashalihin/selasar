@@ -37,6 +37,11 @@ Self-hosted, open-source web analytics with ClickHouse, multi-domain support, an
 | Styling | Tailwind v4 |
 | Testing | Buntest (156 tests) |
 
+## Prerequisites
+
+- **Bun >= 1.4** — install with `curl -fsSL https://bun.sh/install | bash` (Bun 1.4+ required for `Bun.image` API used in avatar processing)
+- **ClickHouse** — any recent version (24.x+). Run via Docker or native install
+
 ## Quick Start
 
 ```bash
