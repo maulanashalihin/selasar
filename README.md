@@ -232,6 +232,148 @@ ORDER BY (site_id, event_date, event_name);
 
 Materialized views: `daily_stats` (SummingMergeTree), `page_stats` (SummingMergeTree).
 
+## Deployment
+
+Selasar runs on any Linux VPS with ≥1GB RAM. Two deployment methods:
+
+### Option A: Docker (recommended)
+
+Best for most users — ClickHouse, app, and healthchecks in one stack.
+
+```bash
+# 1. Clone
+git clone https://github.com/maulanashalihin/selasar.git
+cd selasar
+
+# 2. Configure
+cp .env.example .env
+# Edit .env:
+#   PORT=4000
+#   NODE_ENV=production
+#   APP_URL=https://your-domain.com
+
+# 3. Build and start (app + ClickHouse)
+docker compose up -d --build
+
+# 4. Initialize ClickHouse schema + seed demo data
+docker compose exec app bun run ch:init
+docker compose exec app bun run db:seed
+docker compose exec app bun run ch:seed
+
+# 5. Verify
+curl http://localhost:4000/health
+docker compose ps   # both services should be "healthy"
+```
+
+The `docker-compose.yml` includes:
+- **app** — Selasar built with Bun, runs as non-root user (UID 1000), healthcheck on `/health`
+- **clickhouse** — ClickHouse 24.8 Alpine, persistent volume, healthcheck on `/ping`
+
+Data persists in `./data/` (SQLite + uploads) and `./clickhouse-data/` (analytics).
+
+### Option B: systemd (bare VPS)
+
+For users who prefer native processes without Docker. You need ClickHouse running separately (native install or Docker).
+
+```bash
+# 1. Install Bun
+curl -fsSL https://bun.sh/install | bash
+source ~/.bashrc
+
+# 2. Install ClickHouse (if not already running)
+# Option 1: Docker
+docker run -d --name clickhouse -p 8123:8123 \
+  clickhouse/clickhouse-server:24.8-alpine
+# Option 2: Native
+# Follow https://clickhouse.com/docs/install
+
+# 3. Clone and build
+git clone https://github.com/maulanashalihin/selasar.git /opt/selasar
+cd /opt/selasar
+bun install
+bun run build
+
+# 4. Configure
+cp .env.example .env
+# Edit .env:
+#   PORT=4000
+#   NODE_ENV=production
+#   APP_URL=https://your-domain.com
+#   CLICKHOUSE_URL=http://localhost:8123
+#   CLICKHOUSE_USER=     # set if your ClickHouse requires auth
+#   CLICKHOUSE_PASSWORD= # set if your ClickHouse requires auth
+
+# 5. Initialize ClickHouse schema + seed demo data
+bun run ch:init
+bun run db:seed
+bun run ch:seed
+
+# 6. Create systemd service
+sudo tee /etc/systemd/system/selasar.service > /dev/null << 'EOF'
+[Unit]
+Description=Selasar — Self-hosted web analytics
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/selasar
+Environment=NODE_ENV=production
+ExecStart=/home/ubuntu/.bun/bin/bun run src/index.ts
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable selasar
+sudo systemctl start selasar
+
+# 7. Verify
+curl http://localhost:4000/health
+sudo systemctl status selasar
+```
+
+### HTTPS with Cloudflare
+
+For production, put Cloudflare in front as reverse proxy:
+
+1. **DNS**: Create an A record pointing your domain to the server IP (proxied/orange cloud)
+2. **SSL/TLS**: Set mode to Flexible (Cloudflare terminates TLS, talks HTTP to origin)
+3. **Origin Rule**: Route traffic to your app port — `(http.host eq "your-domain.com")` → port 4000
+4. **Firewall**: Restrict the app port to Cloudflare IP ranges only
+
+```bash
+# Restrict UFW to Cloudflare IPs
+sudo ufw allow OpenSSH
+sudo ufw delete allow 4000/tcp  # remove open-to-all rule if exists
+for ip in $(curl -s https://api.cloudflare.com/client/v4/ips | jq -r '.result.ipv4_cidrs[]'); do
+  sudo ufw allow from $ip to any port 4000 proto tcp
+done
+echo "y" | sudo ufw enable
+```
+
+### HTTPS with Caddy (alternative)
+
+If you prefer a self-hosted reverse proxy with automatic TLS:
+
+```bash
+# Install Caddy
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update && sudo apt install caddy
+
+# Caddyfile (/etc/caddy/Caddyfile)
+your-domain.com {
+    reverse_proxy localhost:4000
+}
+
+sudo systemctl restart caddy
+```
+
 ## Development
 
 ```bash
