@@ -4,10 +4,13 @@
 
 Self-hosted, open-source web analytics with ClickHouse, multi-domain support, and a beautiful dashboard. Built with Hono + Bun + Svelte 5 + Inertia v3.
 
+**Live demo:** [selasar.maulanabuilds.com](https://selasar.maulanabuilds.com) — login with `demo@example.com` / `password123`
+
 [![CI](https://github.com/maulanashalihin/selasar/actions/workflows/ci.yml/badge.svg)](https://github.com/maulanashalihin/selasar/actions/workflows/ci.yml)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Bun](https://img.shields.io/badge/Bun-%3E%3D1.3-f9f1e1)
 ![ClickHouse](https://img.shields.io/badge/ClickHouse-engine-yellow)
+![Demo](https://img.shields.io/badge/demo-selasar.maulanabuilds.com-success)
 
 ## Features
 
