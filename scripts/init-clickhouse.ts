@@ -7,10 +7,15 @@ import { chPing } from "../src/server/clickhouse";
 
 const CH_URL = process.env.CLICKHOUSE_URL ?? "http://localhost:8123";
 const CH_DB = process.env.CLICKHOUSE_DB ?? "analytics";
+const CH_USER = process.env.CLICKHOUSE_USER ?? "";
+const CH_PASSWORD = process.env.CLICKHOUSE_PASSWORD ?? "";
+const CH_HEADERS: Record<string, string> = CH_USER
+	? { Authorization: `Basic ${btoa(`${CH_USER}:${CH_PASSWORD}`)}` }
+	: {};
 
 async function chExec(sql: string): Promise<void> {
 	const url = `${CH_URL}/?query=${encodeURIComponent(sql)}`;
-	const resp = await fetch(url, { method: "POST" });
+	const resp = await fetch(url, { method: "POST", headers: CH_HEADERS });
 	if (!resp.ok) {
 		const body = await resp.text();
 		throw new Error(`ClickHouse error: ${body}`);

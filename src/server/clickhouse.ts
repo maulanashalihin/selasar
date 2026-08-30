@@ -5,13 +5,19 @@
 
 const CH_URL = process.env.CLICKHOUSE_URL ?? "http://localhost:8123";
 const CH_DB = process.env.CLICKHOUSE_DB ?? "analytics";
+const CH_USER = process.env.CLICKHOUSE_USER ?? "";
+const CH_PASSWORD = process.env.CLICKHOUSE_PASSWORD ?? "";
+
+const CH_HEADERS: Record<string, string> = CH_USER
+	? { Authorization: `Basic ${btoa(`${CH_USER}:${CH_PASSWORD}`)}` }
+	: {};
 
 /** Execute a SELECT query and return parsed JSON rows. */
 export async function chQuery<T = Record<string, unknown>>(
 	sql: string,
 ): Promise<T[]> {
 	const url = `${CH_URL}/?database=${CH_DB}&query=${encodeURIComponent(sql + " FORMAT JSON")}`;
-	const resp = await fetch(url, { method: "POST" });
+	const resp = await fetch(url, { method: "POST", headers: CH_HEADERS });
 	if (!resp.ok) {
 		const body = await resp.text();
 		throw new Error(`ClickHouse query error: ${body}`);
@@ -30,7 +36,7 @@ export async function chInsert(
 	const url = `${CH_URL}/?database=${CH_DB}&query=${encodeURIComponent(
 		`INSERT INTO ${table} FORMAT JSONEachRow`,
 	)}`;
-	const resp = await fetch(url, { method: "POST", body });
+	const resp = await fetch(url, { method: "POST", headers: CH_HEADERS, body });
 	if (!resp.ok) {
 		const text = await resp.text();
 		throw new Error(`ClickHouse insert error: ${text}`);
@@ -40,7 +46,7 @@ export async function chInsert(
 /** Ping ClickHouse — returns true if reachable. */
 export async function chPing(): Promise<boolean> {
 	try {
-		const resp = await fetch(`${CH_URL}/ping`, { method: "GET" });
+		const resp = await fetch(`${CH_URL}/ping`, { method: "GET", headers: CH_HEADERS });
 		return resp.ok;
 	} catch {
 		return false;
