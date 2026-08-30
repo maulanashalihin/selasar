@@ -344,17 +344,17 @@
 	{:else}
 	<!-- Metric cards + chart -->
 	<div class="relative w-full bg-surface rounded-radius shadow-card mb-6">
-		<div class="flex relative border-b border-border overflow-x-auto">
+		<div class="flex flex-wrap relative border-b border-border">
 			<MetricCard label="Unique Visitors" value={visitorsValue} delta={visitorsDelta} loading={overviewLoading} selected={selectedMetric === 'visitors'} onclick={() => (selectedMetric = 'visitors')} />
-			<div class="border-l border-border my-3"></div>
+			<div class="border-l border-border my-3 hidden lg:block"></div>
 			<MetricCard label="Total Visits" value={visitsValue} delta={visitsDelta} loading={overviewLoading} selected={selectedMetric === 'visits'} onclick={() => (selectedMetric = 'visits')} />
-			<div class="border-l border-border my-3"></div>
+			<div class="border-l border-border my-3 hidden lg:block"></div>
 			<MetricCard label="Total Pageviews" value={pageviewsValue} delta={pageviewsDelta} loading={overviewLoading} selected={selectedMetric === 'pageviews'} onclick={() => (selectedMetric = 'pageviews')} />
-			<div class="border-l border-border my-3"></div>
+			<div class="border-l border-border my-3 hidden lg:block"></div>
 			<MetricCard label="Views per Visit" value={viewsPerVisit} loading={overviewLoading} selected={selectedMetric === 'views_per_visit'} onclick={() => (selectedMetric = 'views_per_visit')} />
-			<div class="border-l border-border my-3"></div>
+			<div class="border-l border-border my-3 hidden lg:block"></div>
 			<MetricCard label="Bounce Rate" value={bounceValue} delta={bounceDelta} loading={overviewLoading} selected={selectedMetric === 'bounce_rate'} onclick={() => (selectedMetric = 'bounce_rate')} />
-			<div class="border-l border-border my-3"></div>
+			<div class="border-l border-border my-3 hidden lg:block"></div>
 			<MetricCard label="Visit Duration" value={durationValue} delta={durationDelta} loading={overviewLoading} selected={selectedMetric === 'duration'} onclick={() => (selectedMetric = 'duration')} />
 		</div>
 		<TrafficChart data={trafficData} loading={trafficLoading} metric={selectedMetric === 'visits' ? 'visitors' : selectedMetric === 'views_per_visit' ? 'visitors' : selectedMetric === 'bounce_rate' ? 'visitors' : selectedMetric === 'duration' ? 'visitors' : selectedMetric} />
@@ -578,7 +578,7 @@
 	{#if visitorTypesRows.length > 0}
 		<div class="bg-surface shadow-card rounded-radius p-5 mb-6">
 			<h3 class="m-0 text-sm font-semibold border-b border-border pb-2 mb-4">Visitor Types</h3>
-			<div class="flex items-center gap-6">
+		<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6">
 				{#each visitorTypesRows as vt (vt.type)}
 					<div class="flex-1">
 						<div class="flex items-center justify-between mb-2">
@@ -629,14 +629,14 @@
 				</div>
 				<div class="flex flex-col gap-3">
 					{#each conversionEvents as event (event.event_name)}
-						<div class="flex items-center gap-4">
-							<span class="text-sm font-medium w-40 shrink-0 truncate">{event.event_name}</span>
-							<div class="flex-1 relative h-6 rounded-md bg-bg overflow-hidden">
-								<div class="absolute inset-y-0 left-0 rounded-md bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500" style={`width: ${(event.conversion_rate / maxConversionRate) * 100}%`}></div>
-							</div>
-							<span class="text-sm font-bold tabular-nums w-12 text-right shrink-0">{event.conversion_rate}%</span>
-							<span class="text-sm tabular-nums text-muted w-16 text-right shrink-0">{event.visitors.toLocaleString()}</span>
+					<div class="flex items-center gap-2 sm:gap-4">
+						<span class="text-sm font-medium w-24 sm:w-40 shrink-0 truncate">{event.event_name}</span>
+						<div class="flex-1 relative h-6 rounded-md bg-bg overflow-hidden min-w-0">
+							<div class="absolute inset-y-0 left-0 rounded-md bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500" style={`width: ${(event.conversion_rate / maxConversionRate) * 100}%`}></div>
 						</div>
+						<span class="text-sm font-bold tabular-nums w-10 sm:w-12 text-right shrink-0">{event.conversion_rate}%</span>
+						<span class="text-sm tabular-nums text-muted w-12 sm:w-16 text-right shrink-0">{event.visitors.toLocaleString()}</span>
+					</div>
 					{/each}
 				</div>
 			</div>
