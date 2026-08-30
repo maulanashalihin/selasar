@@ -168,7 +168,7 @@
 						</svg>
 					{:else}
 						<img
-							src="https://icons.duckduckgo.com/ip3/{row.source}.ico"
+						src="https://www.google.com/s2/favicons?domain={encodeURIComponent(row.source)}&sz=32"
 							alt=""
 							class="w-4 h-4 rounded-sm relative z-10"
 							onerror={(e) => {

@@ -129,8 +129,8 @@ export function createApp(assets: InertiaAssets) {
 			isUploads
 				? `script-src 'none'`
 				: `script-src 'self' 'nonce-${nonce}'`,
-		`style-src 'self' 'nonce-${nonce}'`,
-			`img-src 'self' data: https://icons.duckduckgo.com https://www.google.com https://*.gstatic.com`,
+		`style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+		`img-src 'self' data: https://www.google.com https://*.gstatic.com`,
 			`font-src 'self'`,
 			`connect-src 'self'`,
 			`frame-ancestors 'none'`,
