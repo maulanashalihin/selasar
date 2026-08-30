@@ -105,8 +105,8 @@
   <div class="relative max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
     <Brand href="/" class="justify-center mb-6 text-lg" />
 
-    <h1 class="text-[2.75rem] md:text-[3.5rem] font-bold m-0 mb-4 tracking-tight leading-[1.1]">
-      The corridor between<br />data and insight.
+    <h1 class="text-[2rem] md:text-[3.5rem] font-bold m-0 mb-4 tracking-tight leading-[1.15]">
+      The corridor between data and insight.
     </h1>
 
     <p class="text-lg md:text-xl text-muted max-w-2xl mx-auto m-0 mb-8 leading-relaxed">
@@ -155,14 +155,14 @@
     <!-- Mock dashboard card -->
     <div class="bg-surface border border-border rounded-radius shadow-card overflow-hidden">
       <!-- Top bar -->
-      <div class="flex items-center justify-between px-5 py-3 border-b border-border">
-        <div class="flex items-center gap-2">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
           <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
           <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
         </div>
-        <span class="text-muted text-xs">selasar / demo-site / analytics</span>
-        <span class="text-muted text-xs">Last 28 days</span>
+        <span class="text-muted text-xs truncate hidden sm:inline">selasar / demo-site / analytics</span>
+        <span class="text-muted text-xs shrink-0">Last 28 days</span>
       </div>
 
       <!-- Metric cards row -->
@@ -387,15 +387,15 @@ clickhouse server --daemon
 cp .env.example .env
 bun run ch:init
 bun run db:seed
-bun run scripts/seed-clickhouse.ts
+bun run ch:seed
 
 <span class="text-muted"># Run</span>
 bun run dev</code></pre>
     </div>
 
-    <p class="text-center text-muted text-sm mt-6 m-0">
-      Open <span class="font-mono text-text">http://localhost:4000</span> and login with
-      <span class="font-mono text-text">demo@example.com</span> / <span class="font-mono text-text">password123</span>
+    <p class="text-center text-muted text-sm mt-6 m-0 px-2 break-words">
+      Open <span class="font-mono text-text break-all">http://localhost:4000</span> and login with
+      <span class="font-mono text-text break-all">demo@example.com</span> / <span class="font-mono text-text break-all">password123</span>
     </p>
   </div>
 </section>
@@ -442,7 +442,7 @@ bun run dev</code></pre>
       <span class="text-muted">·</span>
       <span>MIT License</span>
     </div>
-    <div class="flex items-center gap-5 text-sm">
+    <div class="flex items-center gap-4 sm:gap-5 text-sm flex-wrap justify-center">
       <a href="https://github.com/maulanashalihin/selasar" class="text-muted hover:text-text" rel="noopener">GitHub</a>
       <Link href="/login" class="text-muted hover:text-text">Sign in</Link>
       <a href="https://github.com/maulanashalihin/selasar/blob/main/CHANGELOG.md" class="text-muted hover:text-text" rel="noopener">Changelog</a>

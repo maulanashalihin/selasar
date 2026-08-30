@@ -123,7 +123,7 @@
 					<tr class="bg-bg/50 backdrop-blur">
 						{#each columns as col (col.key)}
 							<th
-								class="px-5 h-11 text-xs font-semibold uppercase tracking-wide text-muted select-none {col.align === 'right' ? 'text-right' : 'text-left'}"
+							class="px-3 sm:px-5 h-11 text-xs font-semibold uppercase tracking-wide text-muted select-none {col.align === 'right' ? 'text-right' : 'text-left'} {col.key === 'avg_duration' ? 'hidden sm:table-cell' : ''}"
 							>
 								{#if col.key === 'page_path'}
 									{col.label}
@@ -173,7 +173,7 @@
 					{:else}
 						{#each filteredRows as row (row.page_path)}
 							<tr class="border-b border-border hover:bg-bg/30 transition-colors">
-							<td class="px-5 py-2.5 text-sm font-medium text-text max-w-0">
+						<td class="px-3 sm:px-5 py-2.5 text-sm font-medium text-text max-w-0">
 								<div class="flex flex-col min-w-0 gap-0.5">
 									<span class="truncate">{row.page_path}</span>
 									{#if row.page_title}
@@ -181,17 +181,17 @@
 									{/if}
 								</div>
 							</td>
-								<td class="px-5 h-11 text-right">
-									<div class="relative w-full">
-										<div
-											class="absolute right-0 top-0 bottom-0 bg-primary/10 rounded"
-											style="width: {maxViews > 0 ? (row.views / maxViews) * 100 : 0}%"
-										></div>
-										<span class="relative text-sm tabular-nums">{row.views.toLocaleString()}</span>
-									</div>
-								</td>
-								<td class="px-5 h-11 text-right text-sm tabular-nums">{row.unique_visitors.toLocaleString()}</td>
-								<td class="px-5 h-11 text-right text-sm tabular-nums">{formatDuration(row.avg_duration)}</td>
+							<td class="px-3 sm:px-5 h-11 text-right">
+								<div class="relative w-full">
+									<div
+										class="absolute right-0 top-0 bottom-0 bg-primary/10 rounded"
+										style="width: {maxViews > 0 ? (row.views / maxViews) * 100 : 0}%"
+									></div>
+									<span class="relative text-sm tabular-nums">{row.views.toLocaleString()}</span>
+								</div>
+							</td>
+							<td class="px-3 sm:px-5 h-11 text-right text-sm tabular-nums">{row.unique_visitors.toLocaleString()}</td>
+							<td class="px-3 sm:px-5 h-11 text-right text-sm tabular-nums hidden sm:table-cell">{formatDuration(row.avg_duration)}</td>
 							</tr>
 						{/each}
 					{/if}
