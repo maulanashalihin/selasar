@@ -43,7 +43,7 @@
 	<button
 		type="button"
 		onclick={toggle}
-		class="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text transition-colors hover:bg-bg"
+		class="inline-flex items-center gap-1.5 sm:gap-2 rounded-md border border-border bg-surface px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium text-text transition-colors hover:bg-bg whitespace-nowrap"
 	>
 		<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 			<rect x="3" y="4" width="18" height="18" rx="2" />

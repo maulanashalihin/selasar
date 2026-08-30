@@ -291,12 +291,12 @@
 
 <Layout>
 	<!-- Top bar -->
-	<div class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
 		<div>
-			<h1 class="text-[1.6rem] m-0 mb-1 tracking-tight font-bold">{site.name}</h1>
-			<p class="text-muted text-sm m-0">{site.primaryDomain ?? 'No domain set'}</p>
+			<h1 class="text-xl sm:text-[1.6rem] m-0 mb-0.5 sm:mb-1 tracking-tight font-bold">{site.name}</h1>
+			<p class="text-muted text-xs sm:text-sm m-0">{site.primaryDomain ?? 'No domain set'}</p>
 		</div>
-		<div class="flex items-center gap-3">
+		<div class="flex items-center gap-2 sm:gap-3">
 			<LiveBadge count={liveCount} loading={liveLoading} />
 			<DateRangePicker bind:value={range} options={ranges} />
 		</div>
@@ -344,7 +344,7 @@
 	{:else}
 	<!-- Metric cards + chart -->
 	<div class="relative w-full bg-surface rounded-radius shadow-card mb-6">
-		<div class="flex flex-wrap relative border-b border-border">
+		<div class="grid grid-cols-2 lg:flex lg:flex-nowrap relative border-b border-border">
 			<MetricCard label="Unique Visitors" value={visitorsValue} delta={visitorsDelta} loading={overviewLoading} selected={selectedMetric === 'visitors'} onclick={() => (selectedMetric = 'visitors')} />
 			<div class="border-l border-border my-3 hidden lg:block"></div>
 			<MetricCard label="Total Visits" value={visitsValue} delta={visitsDelta} loading={overviewLoading} selected={selectedMetric === 'visits'} onclick={() => (selectedMetric = 'visits')} />

@@ -11,7 +11,7 @@
 </script>
 
 <span
-	class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium {hasVisitors ? 'bg-success/10 text-success' : 'bg-bg text-muted border border-border'}"
+	class="inline-flex items-center gap-1.5 sm:gap-2 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium whitespace-nowrap {hasVisitors ? 'bg-success/10 text-success' : 'bg-bg text-muted border border-border'}"
 >
 	{#if hasVisitors}
 		<span class="relative flex h-2 w-2">

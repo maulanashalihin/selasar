@@ -22,7 +22,7 @@
 
 <div
 	class={cn(
-		'flex-1 px-4 w-1/2 my-2 lg:w-auto group select-none',
+		'flex-1 px-3 py-2.5 sm:px-4 sm:py-3 lg:py-2 lg:w-auto group select-none border-b border-r border-border lg:border-0',
 		onclick && 'cursor-pointer',
 	)}
 	role={onclick ? 'button' : undefined}
@@ -39,7 +39,7 @@
 		<span
 			style="letter-spacing: -0.01em"
 			class={cn(
-				'text-xs uppercase whitespace-nowrap flex w-fit tracking-[-0.01em] font-bold',
+			'text-[10px] sm:text-xs uppercase tracking-[-0.01em] font-bold leading-tight sm:whitespace-nowrap sm:flex sm:w-fit',
 				selected ? 'text-text' : 'text-muted group-hover:text-text',
 			)}
 		>
@@ -50,7 +50,7 @@
 			<Skeleton class="h-5 w-20" />
 		{:else}
 			<span class="flex items-baseline whitespace-nowrap gap-2">
-			<span class="font-bold text-2xl text-text tabular-nums">
+			<span class="font-bold text-xl sm:text-2xl text-text tabular-nums">
 					{value}
 				</span>
 				{#if delta !== null}
