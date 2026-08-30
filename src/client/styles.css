@@ -129,3 +129,9 @@
 .btn-ghost:hover {
 	background: var(--bg);
 }
+
+.bg-grid {
+	background-image: linear-gradient(var(--text) 1px, transparent 1px),
+		linear-gradient(90deg, var(--text) 1px, transparent 1px);
+	background-size: 48px 48px;
+}
