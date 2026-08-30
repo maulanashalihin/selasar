@@ -4,7 +4,7 @@
   "license": "MIT",
   "description": "Selasar — Self-hosted web analytics with ClickHouse, multi-domain support, and a beautiful dashboard. Built with Hono + Bun + Svelte 5 + Inertia v3.",
   "engines": {
-    "bun": ">=1.3.0"
+    "bun": ">=1.4.0"
   },
   "private": true,
   "type": "module",
