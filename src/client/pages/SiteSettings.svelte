@@ -44,29 +44,32 @@
   const inputClass =
     'w-full px-3 py-2.5 border border-border rounded-lg bg-bg text-text text-[0.95rem] focus:outline-2 focus:outline-primary focus:-outline-offset-1 focus:border-primary'
 
-  const TIMEZONES = [
-    'UTC',
-    'America/New_York',
-    'America/Chicago',
-    'America/Denver',
-    'America/Los_Angeles',
-    'America/Sao_Paulo',
-    'Europe/London',
-    'Europe/Paris',
-    'Europe/Berlin',
-    'Europe/Madrid',
-    'Africa/Johannesburg',
-    'Africa/Lagos',
-    'Africa/Nairobi',
-    'Asia/Dubai',
-    'Asia/Kolkata',
-    'Asia/Bangkok',
-    'Asia/Jakarta',
-    'Asia/Shanghai',
-    'Asia/Tokyo',
-    'Asia/Singapore',
-    'Australia/Sydney',
-    'Pacific/Auckland',
+  const TIMEZONES: { value: string; label: string }[] = [
+    { value: 'UTC', label: 'UTC (+00:00)' },
+    { value: 'America/New_York', label: 'New York (-05:00)' },
+    { value: 'America/Chicago', label: 'Chicago (-06:00)' },
+    { value: 'America/Denver', label: 'Denver (-07:00)' },
+    { value: 'America/Los_Angeles', label: 'Los Angeles (-08:00)' },
+    { value: 'America/Sao_Paulo', label: 'São Paulo (-03:00)' },
+    { value: 'Europe/London', label: 'London (+00:00)' },
+    { value: 'Europe/Paris', label: 'Paris (+01:00)' },
+    { value: 'Europe/Berlin', label: 'Berlin (+01:00)' },
+    { value: 'Europe/Madrid', label: 'Madrid (+01:00)' },
+    { value: 'Europe/Istanbul', label: 'Istanbul (+03:00)' },
+    { value: 'Africa/Johannesburg', label: 'Johannesburg (+02:00)' },
+    { value: 'Africa/Lagos', label: 'Lagos (+01:00)' },
+    { value: 'Africa/Cairo', label: 'Cairo (+02:00)' },
+    { value: 'Africa/Nairobi', label: 'Nairobi (+03:00)' },
+    { value: 'Asia/Dubai', label: 'Dubai (+04:00)' },
+    { value: 'Asia/Riyadh', label: 'Madinah/Riyadh (+03:00)' },
+    { value: 'Asia/Kolkata', label: 'Kolkata (+05:30)' },
+    { value: 'Asia/Bangkok', label: 'Bangkok (+07:00)' },
+    { value: 'Asia/Jakarta', label: 'Jakarta (+07:00)' },
+    { value: 'Asia/Shanghai', label: 'Shanghai (+08:00)' },
+    { value: 'Asia/Tokyo', label: 'Tokyo (+09:00)' },
+    { value: 'Asia/Singapore', label: 'Singapore (+08:00)' },
+    { value: 'Australia/Sydney', label: 'Sydney (+10:00)' },
+    { value: 'Pacific/Auckland', label: 'Auckland (+12:00)' },
   ]
 
   /** JSON fetch helper for the /api endpoints. Throws on non-2xx. */
@@ -172,11 +175,11 @@
         <div>
           <label for="site-tz" class="block text-sm font-semibold mb-1.5">Timezone</label>
           <select id="site-tz" class={inputClass} bind:value={timezone}>
-            {#if !TIMEZONES.includes(timezone)}
+            {#if !TIMEZONES.some((tz) => tz.value === timezone)}
               <option value={timezone}>{timezone}</option>
             {/if}
-            {#each TIMEZONES as tz (tz)}
-              <option value={tz}>{tz}</option>
+            {#each TIMEZONES as tz (tz.value)}
+              <option value={tz.value}>{tz.label}</option>
             {/each}
           </select>
         </div>
