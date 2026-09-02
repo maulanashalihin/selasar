@@ -1,56 +1,76 @@
-# First deploy — systemd (bare VPS)
+# First deploy — systemd (bare VPS, no Docker)
 #
-# Edit the five placeholders below, then paste this entire file
-# to your AI agent (omp.sh, Claude Code, Cursor, etc.)
+# Paste this entire file to your AI agent (omp.sh, Claude Code, Cursor, etc.)
+# Replace the placeholders in the "Details" section with your actual values.
 #
-# Placeholders to replace:
-#   USER@SERVER_IP       → your SSH login (e.g. root@203.0.113.5)
-#   YOUR_USER/YOUR_REPO  → your GitHub repo (e.g. maulanashalihin/selasar)
-#   your-domain.com      → your domain (or "none" if no domain yet)
-#   /opt/selasar           → where to install on the server (or keep as-is)
-#   APP_PORT             → pick a port (e.g. 4000, 8084, 9090)
+# This deploys Selasar with: Bun (app) + ClickHouse (analytics, native binary)
+# HTTPS via Cloudflare proxy + Origin Rule (not Caddy/nginx).
 
-Deploy my Selasar app on my VPS using systemd (no Docker). Here are
-the details:
+Deploy my Selasar app on my VPS using systemd (no Docker). Here are the details:
 
 - SSH: ssh USER@SERVER_IP
 - GitHub repo: https://github.com/YOUR_USER/YOUR_REPO.git
 - Domain: your-domain.com (or "none" if no domain yet)
 - Install path: /opt/selasar
-- App port: APP_PORT
+- App port: APP_PORT (e.g. 4000)
 
 Steps:
-1. SSH into the server.
-2. Install Bun (curl -fsSL https://bun.sh/install | bash).
-3. Check if the app port is already in use (ss -tlnp | grep APP_PORT).
-   If it is, pick the next available port and use that instead.
-4. Clone the repo to the install path.
-5. Run `bun install` and `bun run build`.
-6. Copy .env.example to .env and change these three lines:
-   - PORT=<the port you chose>
-   - NODE_ENV=production
-   - APP_URL=https://your-domain.com (or http://SERVER_IP:<port> if no domain)
-   Leave the rest as-is (DATABASE_PATH is relative, works anywhere).
-7. Read the "name" field from package.json — that's the service name.
-   Create a systemd unit at /etc/systemd/system/<name>.service that
-   runs `bun run src/index.ts` with WorkingDirectory set to the
-   install path.
-8. Enable and start the service.
-9. If the port is not in UFW rules, allow it: sudo ufw allow <port>/tcp.
-10. Verify: curl http://localhost:<port>/health should return 200.
-11. Save these four lines to a file called `deploy.env` in my local
-    project root (NOT on the server) and add it to .gitignore.
-    Use the actual values from above (not the placeholders):
+1. SSH into the server. Check OS, RAM, disk space.
+2. Install Bun: curl -fsSL https://bun.sh/install | bash
+   Then symlink: sudo ln -sf ~/.bun/bin/bun /usr/local/bin/bun
+   And: sudo ln -sf ~/.bun/bin/bunx /usr/local/bin/bunx
+3. Install ClickHouse (native binary, not Docker):
+   curl -fsSL https://clickhouse.com/ | bash
+   sudo ./clickhouse install
+4. Create systemd service for ClickHouse at /etc/systemd/system/clickhouse.service:
+   Type=simple, User=clickhouse, ExecStart=/usr/bin/clickhouse-server --config-file /etc/clickhouse-server/config.xml
+   ExecStop=/usr/bin/clickhouse-client --query 'SYSTEM SHUTDOWN'
+   Restart=on-failure, LimitNOFILE=500000
+   Enable and start it. Verify: curl http://localhost:8123/ping → "Ok."
+5. Check if the app port is already in use (ss -tlnp | grep APP_PORT).
+   If it is, pick the next available port.
+6. Clone the repo: sudo mkdir -p /opt/selasar && sudo chown $USER:$USER /opt/selasar
+   cd /opt/selasar && git clone <repo> .
+7. bun install && bun run build
+8. Create .env in the install path with these required keys:
+   PORT=<chosen port>
+   NODE_ENV=production
+   APP_URL=https://your-domain.com (or http://SERVER_IP:<port> if no domain)
+   DATABASE_PATH=./data/app.sqlite
+   SSR=true
+   MAIL_DRIVER=log
+   MAIL_FROM=no-reply@example.com
+   CLICKHOUSE_URL=http://localhost:8123
+   CLICKHOUSE_DB=analytics
+   Leave GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, RESEND_API_KEY empty if unused.
+   Create data dir: mkdir -p data
+9. Init ClickHouse schema: bun run scripts/init-clickhouse.ts
+10. Read the "name" field from package.json — that's the service name.
+    Create a systemd unit at /etc/systemd/system/<name>.service:
+    Type=simple, User=$USER, WorkingDirectory=/opt/selasar
+    EnvironmentFile=/opt/selasar/.env
+    ExecStart=/usr/local/bin/bun src/index.ts
+    Restart=on-failure, RestartSec=3
+    Enable and start it.
+11. Verify: curl http://localhost:<port>/health should return 200.
+12. Seed an admin user: bun run db:seed admin@example.com admin123 admin
+13. Configure UFW firewall:
+    - If using Cloudflare: allow the app port ONLY from Cloudflare IP ranges
+      (15 IPv4 + 7 IPv6 ranges from https://cloudflare.com/ips/)
+    - If no Cloudflare: sudo ufw allow <port>/tcp
+14. If using Cloudflare (recommended for HTTPS):
+    - Create a DNS A record for your-domain.com → server IP (proxied/orange cloud)
+    - Add an Origin Rule: if http.host eq "your-domain.com" → route to port <chosen port>
+    - Set SSL mode to Flexible (Cloudflare terminates HTTPS, origin gets HTTP)
+15. Save these lines to deploy.env in my LOCAL project root (NOT on the server).
+    Add deploy.env to .gitignore if not already:
     ```
-    DEPLOY_SSH=<the USER@SERVER_IP from above>
-    DEPLOY_PATH=<the install path from above>
-    DEPLOY_SERVICE=<the service name from step 7>
-    DEPLOY_PORT=<the port you chose in step 3>
+    DEPLOY_SSH=<USER@SERVER_IP>
+    DEPLOY_PATH=<install path>
+    DEPLOY_PORT=<chosen port>
+    DEPLOY_SERVICE=<service name from step 10>
+    DEPLOY_URL=https://your-domain.com
     ```
-12. Tell me the status, the port used, and any issues.
+16. Tell me: the URL, port used, service status, ClickHouse status, and any issues.
 
-# After the agent finishes, your app is live on the chosen port.
-# For HTTPS, paste this follow-up prompt:
-#
-#   Now set up a reverse proxy for HTTPS. Use Caddy in front of
-#   the app port, with automatic TLS for your-domain.com.
+# After this, use @prompts/update-systemd.txt for routine updates.
