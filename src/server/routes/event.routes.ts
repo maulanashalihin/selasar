@@ -5,7 +5,7 @@
  */
 import { Hono } from "hono";
 import { addDomain, findSiteByTrackingId, isDomainRegistered } from "../db";
-import { chInsert, chQuery } from "../clickhouse";
+import { chInsert } from "../clickhouse";
 import type { AppEnv } from "../inertia-middleware";
 
 /** Parse User-Agent into device + browser (zero-dependency, 10 lines). */
@@ -62,6 +62,45 @@ async function hashSessionId(visitorId: string, ts: number): Promise<string> {
 		.map((b) => b.toString(16).padStart(2, "0"))
 		.join("");
 }
+
+/**
+ * In-memory cache for visitor/session existence checks.
+ * Replaces a ClickHouse SELECT per event with O(1) Map lookup.
+ * TTL: 30min (matches session window). After restart, visitors are
+ * re-counted as "new" once — acceptable for analytics.
+ */
+const VISITOR_TTL_MS = 30 * 60 * 1000;
+const seenVisitors = new Map<string, number>(); // visitor_id → first-seen timestamp
+const seenSessions = new Map<string, number>(); // session_id → first-pageview timestamp
+
+function checkVisitor(visitorId: string): boolean {
+	const now = Date.now();
+	const seen = seenVisitors.get(visitorId);
+	if (seen !== undefined) return false; // not new
+	seenVisitors.set(visitorId, now);
+	return true; // new
+}
+
+function checkSession(sessionId: string, isPageview: boolean): boolean {
+	if (!isPageview) return false;
+	const seen = seenSessions.get(sessionId);
+	if (seen !== undefined) return false; // already had pageview → not bounce
+	seenSessions.set(sessionId, Date.now());
+	return true; // first pageview → bounce
+}
+
+/** Reset cache (for tests). */
+export function resetIngestionCache(): void {
+	seenVisitors.clear();
+	seenSessions.clear();
+}
+
+// Periodic cleanup of expired entries (every 5 min).
+setInterval(() => {
+	const now = Date.now();
+	for (const [key, ts] of seenVisitors) if (now - ts > VISITOR_TTL_MS) seenVisitors.delete(key);
+	for (const [key, ts] of seenSessions) if (now - ts > VISITOR_TTL_MS) seenSessions.delete(key);
+}, 5 * 60 * 1000);
 
 function getDomainFromReferer(referrer: string): string {
 	if (!referrer) return "";
@@ -136,15 +175,13 @@ export const eventRoutes = () => {
 		const eventDate = new Date(ts).toISOString().slice(0, 10);
 		const eventTime = new Date(ts).toISOString().slice(0, 19).replace("T", " ");
 
-		const visitorId = await hashVisitorId(ip, ua, site.id);
-		const sessionId = await hashSessionId(visitorId, ts);
+	const visitorId = await hashVisitorId(ip, ua, site.id);
+	const sessionId = await hashSessionId(visitorId, ts);
+	const eventName = body.type === "pageview" ? "pageview" : body.type === "custom" ? (body.event_name || "custom") : body.type;
+	// O(1) in-memory cache — no ClickHouse round-trip per event.
+	const isNewVisitor = checkVisitor(visitorId) ? 1 : 0;
+	const isBounce = checkSession(sessionId, eventName === "pageview") ? 1 : 0;
 
-		const eventName = body.type === "pageview" ? "pageview" : body.type === "custom" ? (body.event_name || "custom") : body.type;
-		const [existing] = await chQuery<{ visitor_exists: number; session_pv_exists: number }>(
-			`SELECT (SELECT 1 FROM events WHERE site_id = ${site.id} AND visitor_id = '${visitorId}' LIMIT 1) AS visitor_exists, (SELECT 1 FROM events WHERE site_id = ${site.id} AND session_id = '${sessionId}' AND event_name = 'pageview' LIMIT 1) AS session_pv_exists`,
-		);
-		const isNewVisitor = existing?.visitor_exists ? 0 : 1;
-		const isBounce = eventName === "pageview" && !existing?.session_pv_exists ? 1 : 0;
 
 		const row = {
 			site_id: site.id,

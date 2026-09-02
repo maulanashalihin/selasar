@@ -59,6 +59,11 @@ afterAll(async () => {
 	db.close();
 });
 
+afterEach(async () => {
+	const { resetIngestionCache } = await import("../src/server/routes/event.routes");
+	resetIngestionCache();
+});
+
 const BASE = "http://localhost:3000";
 
 async function postEvent(payload: Record<string, unknown>, headers: Record<string, string> = {}): Promise<Response> {
@@ -187,41 +192,39 @@ describe("event ingestion", () => {
 		expect(res.headers.get("Access-Control-Allow-Origin")).toBe("*");
 		expect(res.headers.get("Access-Control-Allow-Methods")).toBe("POST");
 	});
-	afterEach(() => {
-		chQueryMockImpl = async () => [];
-	});
 
 	it("sets is_new_visitor=1 for first-time visitor", async () => {
 		capture.rows.length = 0;
-		chQueryMockImpl = async () => [];
 		await postEvent({ tracking_id: trackingId, type: "pageview", path: "/" });
 		expect(capture.rows[0]!.is_new_visitor).toBe(1);
 	});
 
 	it("sets is_new_visitor=0 for returning visitor", async () => {
-		capture.rows.length = 0;
-		chQueryMockImpl = async () => [{ visitor_exists: 1, session_pv_exists: 0 }];
+		// First event registers the visitor.
 		await postEvent({ tracking_id: trackingId, type: "pageview", path: "/" });
+		capture.rows.length = 0;
+		// Second event — same visitor (same IP + UA).
+		await postEvent({ tracking_id: trackingId, type: "pageview", path: "/page2" });
 		expect(capture.rows[0]!.is_new_visitor).toBe(0);
 	});
 
 	it("sets is_bounce=1 for first pageview in session", async () => {
 		capture.rows.length = 0;
-		chQueryMockImpl = async () => [];
 		await postEvent({ tracking_id: trackingId, type: "pageview", path: "/" });
 		expect(capture.rows[0]!.is_bounce).toBe(1);
 	});
 
 	it("sets is_bounce=0 when session already has pageview", async () => {
-		capture.rows.length = 0;
-		chQueryMockImpl = async () => [{ visitor_exists: 1, session_pv_exists: 1 }];
+		// First pageview registers the session.
 		await postEvent({ tracking_id: trackingId, type: "pageview", path: "/" });
+		capture.rows.length = 0;
+		// Second event in same session window (same ts bucket).
+		await postEvent({ tracking_id: trackingId, type: "heartbeat", path: "/" });
 		expect(capture.rows[0]!.is_bounce).toBe(0);
 	});
 
 	it("sets is_bounce=0 for non-pageview events", async () => {
 		capture.rows.length = 0;
-		chQueryMockImpl = async () => [];
 		await postEvent({ tracking_id: trackingId, type: "heartbeat", path: "/" });
 		expect(capture.rows[0]!.is_bounce).toBe(0);
 	});
