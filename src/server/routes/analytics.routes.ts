@@ -159,8 +159,8 @@ if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found"
 		total_duration: number;
 	}>(
 		`SELECT
-			uniq(visitor_id) AS visitors,
-		uniq(session_id) AS visits,
+		uniq(visitor_id) AS visitors,
+		uniqIf(session_id, event_name = 'pageview') AS visits,
 		countIf(event_name = 'pageview') AS pageviews,
 		(SELECT count() FROM (SELECT session_id FROM events WHERE site_id = ${siteId} AND ${rf} AND event_name = 'pageview' GROUP BY session_id HAVING count() = 1)) AS bounces,
 			sum(duration_ms) AS total_duration
@@ -178,8 +178,8 @@ if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found"
 		total_duration: number;
 	}>(
 		`SELECT
-			uniq(visitor_id) AS visitors,
-			uniq(session_id) AS visits,
+		uniq(visitor_id) AS visitors,
+		uniqIf(session_id, event_name = 'pageview') AS visits,
 			countIf(event_name = 'pageview') AS pageviews,
 		(SELECT count() FROM (SELECT session_id FROM events WHERE site_id = ${siteId} AND ${prevRf} AND event_name = 'pageview' GROUP BY session_id HAVING count() = 1)) AS bounces,
 			sum(duration_ms) AS total_duration
@@ -244,7 +244,7 @@ if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found"
 		let metricExpr: string;
 		switch (metric) {
 			case "visits":
-				metricExpr = "uniq(session_id)";
+			metricExpr = "uniqIf(session_id, event_name = 'pageview')";
 				break;
 			case "pageviews":
 				metricExpr = "countIf(event_name = 'pageview')";
@@ -536,7 +536,7 @@ if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found"
 			`SELECT
 				if(is_new_visitor = 1, 'new', 'returning') AS type,
 				uniq(visitor_id) AS visitors,
-				uniq(session_id) AS visits,
+			uniqIf(session_id, event_name = 'pageview') AS visits,
 				countIf(event_name = 'pageview') AS pageviews
 			FROM events
 			WHERE site_id = ${siteId} AND ${rf}
