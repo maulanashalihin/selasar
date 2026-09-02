@@ -12,7 +12,8 @@
   var TRACKING_ID = script && script.getAttribute('data-tracking-id');
   if (!TRACKING_ID) return;
 
-  var ENDPOINT = (script && script.getAttribute('data-endpoint')) || '/api/event';
+  var scriptSrc = script && script.src ? new URL(script.src).origin : '';
+  var ENDPOINT = (script && script.getAttribute('data-endpoint')) || (scriptSrc + '/api/event');
   var HEARTBEAT_INTERVAL = 10000; // 10s
   var lastPing = Date.now();
   var pageLoadTime = lastPing;
