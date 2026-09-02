@@ -61,7 +61,7 @@
     { value: 'Africa/Cairo', label: 'Cairo (+02:00)' },
     { value: 'Africa/Nairobi', label: 'Nairobi (+03:00)' },
     { value: 'Asia/Dubai', label: 'Dubai (+04:00)' },
-    { value: 'Asia/Riyadh', label: 'Madinah/Riyadh (+03:00)' },
+    { value: 'Asia/Riyadh', label: 'Madinah (+03:00)' },
     { value: 'Asia/Kolkata', label: 'Kolkata (+05:30)' },
     { value: 'Asia/Bangkok', label: 'Bangkok (+07:00)' },
     { value: 'Asia/Jakarta', label: 'Jakarta (+07:00)' },
