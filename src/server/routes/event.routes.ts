@@ -208,12 +208,9 @@ export const eventRoutes = () => {
 			utm_term: body.utm_term || "",
 		};
 
-		try {
-			await chInsert("events", [row]);
-		} catch (err) {
-			console.error("[ingestion] ClickHouse insert failed:", err);
-			// Don't fail the request — tracker is fire-and-forget.
-		}
+	chInsert("events", [row]).catch((err) => {
+		console.error("[ingestion] ClickHouse insert failed:", err);
+	});
 
 	return c.body(null, 204, { "Access-Control-Allow-Origin": "*" });
 	});
