@@ -110,6 +110,8 @@ export function createApp(assets: InertiaAssets) {
 			xFrameOptions: "DENY",
 			referrerPolicy: "strict-origin-when-cross-origin",
 			permissionsPolicy: { camera: [], microphone: [], geolocation: [] },
+			// tracker.js must be loadable cross-origin from client sites.
+			crossOriginResourcePolicy: "cross-origin",
 			// CSP is set per-request below (needs the per-request nonce from
 			// inertiaMiddleware) — not here, where it would be static.
 		}),
