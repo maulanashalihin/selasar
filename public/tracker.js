@@ -65,10 +65,12 @@
   send({ type: 'pageview' });
 
   // Heartbeat: send ping every 10s while tab is visible.
+  // Each heartbeat carries elapsed time since last ping → reliable duration tracking.
   setInterval(function () {
     if (document.visibilityState === 'visible') {
+      var elapsed = Date.now() - lastPing;
       lastPing = Date.now();
-      send({ type: 'heartbeat' });
+      send({ type: 'heartbeat', duration_ms: elapsed });
     }
   }, HEARTBEAT_INTERVAL);
 
