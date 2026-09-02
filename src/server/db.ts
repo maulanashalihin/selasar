@@ -316,6 +316,75 @@ export const isDomainRegistered = db.query<{ n: number }, [number, string]>(
 );
 
 // ---------------------------------------------------------------------------
+// Per-site access control (user_sites junction)
+// ---------------------------------------------------------------------------
+
+/** Sites assigned to a user (non-admin). Admins use listSites.all(). */
+export const listUserSites = db.query<SiteRow, [number]>(
+	`SELECT s.id, s.created_by AS createdBy, s.name, s.tracking_id AS trackingId, s.primary_domain AS primaryDomain, s.timezone, s.auto_accept_domains AS autoAcceptDomains, s.created_at AS createdAt
+   FROM sites s JOIN user_sites us ON us.site_id = s.id
+   WHERE us.user_id = ? ORDER BY s.id DESC`,
+);
+
+/** Single site accessible by user (non-admin), or null. Admins use findSiteById.get(). */
+export const findSiteForUser = db.query<SiteRow, [number, number]>(
+	`SELECT s.id, s.created_by AS createdBy, s.name, s.tracking_id AS trackingId, s.primary_domain AS primaryDomain, s.timezone, s.auto_accept_domains AS autoAcceptDomains, s.created_at AS createdAt
+   FROM sites s JOIN user_sites us ON us.site_id = s.id
+   WHERE s.id = ? AND us.user_id = ?`,
+);
+
+/** Check membership: returns row if user has access to site. */
+export const userHasSiteAccess = db.query<{ n: number }, [number, number]>(
+	`SELECT 1 AS n FROM user_sites WHERE user_id = ? AND site_id = ?`,
+);
+
+/** Assign site to user (idempotent — INSERT OR IGNORE). */
+export const assignSiteToUser = db.query<null, [number, number]>(
+	`INSERT OR IGNORE INTO user_sites (user_id, site_id) VALUES (?, ?)`,
+);
+
+/** Remove site access from user. */
+export const unassignSiteFromUser = db.query<null, [number, number]>(
+	`DELETE FROM user_sites WHERE user_id = ? AND site_id = ?`,
+);
+
+/** Site IDs assigned to a user (for admin UI). */
+export const listAssignedSiteIds = db.query<{ siteId: number }, [number]>(
+	`SELECT site_id AS siteId FROM user_sites WHERE user_id = ? ORDER BY site_id`,
+);
+
+/** Count of sites assigned to each user (for admin user list). */
+export const countSitesPerUser = db.query<{ userId: number; n: number }, []>(
+	`SELECT user_id AS userId, COUNT(*) AS n FROM user_sites GROUP BY user_id`,
+);
+
+// --- Access helpers (admin bypasses; users see only assigned) ---
+
+/** Sites accessible by user. Admins see all; users see only assigned. */
+export function accessibleSites(user: { id: number; role: Role }): SiteRow[] {
+	return user.role === "admin" ? listSites.all() : listUserSites.all(user.id);
+}
+
+/** Single site accessible by user, or null. Admins see all; users see only assigned. */
+export function accessibleSite(
+	siteId: number,
+	user: { id: number; role: Role },
+): SiteRow | null {
+	return user.role === "admin"
+		? findSiteById.get(siteId)
+		: findSiteForUser.get(siteId, user.id);
+}
+
+/** Boolean access check for JSON API endpoints. */
+export function canAccessSite(
+	siteId: number,
+	user: { id: number; role: Role },
+): boolean {
+	if (user.role === "admin") return true;
+	return userHasSiteAccess.get(user.id, siteId) !== undefined;
+}
+
+// ---------------------------------------------------------------------------
 // API keys (programmatic analytics access)
 // ---------------------------------------------------------------------------
 

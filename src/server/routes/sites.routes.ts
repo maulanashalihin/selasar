@@ -1,6 +1,6 @@
 /**
  * Site management routes — Inertia pages + JSON API.
- * Internal tool: all authenticated users see all sites.
+ * Per-site access control: users see only assigned sites; admins see all.
  */
 import { Type as t, type Static } from "@sinclair/typebox";
 import { Hono } from "hono";
@@ -8,18 +8,21 @@ import { requireAuth } from "../auth";
 import { config } from "../config";
 import { chQuery } from "../clickhouse";
 import {
+	accessibleSite,
+	accessibleSites,
 	addDomain,
+	assignSiteToUser,
+	canAccessSite,
 	createSite,
 	deleteSite,
-	findSiteById,
 	findSiteByTrackingId,
 	isDomainRegistered,
 	listDomains,
-	listSites,
 	removeDomain,
 	setPrimaryDomain,
 	updateSite,
 } from "../db";
+import type { Role } from "../../shared/types";
 import type { AppEnv } from "../inertia-middleware";
 import { validateJson } from "../validation";
 
@@ -70,9 +73,9 @@ function generateTrackingId(): string {
 	return crypto.randomUUID();
 }
 
-/** Serialize a site + its domains for the client. */
-function siteWithDomains(siteId: number) {
-	const site = findSiteById.get(siteId);
+/** Serialize a site + its domains for the client (access-scoped). */
+function siteWithDomains(siteId: number, user: { id: number; role: Role }) {
+	const site = accessibleSite(siteId, user);
 	if (!site) return null;
 	const domains = listDomains.all(siteId);
 	return { ...site, domains };
@@ -84,7 +87,16 @@ export const siteRoutes = () => {
 	// --- Inertia pages ---
 
 	app.get("/sites", requireAuth, (c) => {
-		const sites = listSites.all();
+		const user = c.var.user!;
+		const sites = accessibleSites(user).map((s) => ({
+			id: s.id,
+			name: s.name,
+			trackingId: s.trackingId,
+			primaryDomain: s.primaryDomain,
+			timezone: s.timezone,
+			autoAcceptDomains: Number(s.autoAcceptDomains) === 1,
+			createdAt: s.createdAt,
+		}));
 		return c.var.inertia.render("Sites", { sites });
 	});
 
@@ -94,14 +106,14 @@ export const siteRoutes = () => {
 
 	app.get("/sites/:id", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = siteWithDomains(id);
+		const site = siteWithDomains(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("SiteSettings", { site, appUrl: config.appUrl });
 	});
 
 	app.get("/sites/:id/analytics", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = findSiteById.get(id);
+		const site = accessibleSite(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("Analytics", { site, appUrl: config.appUrl });
 	});
@@ -109,7 +121,15 @@ export const siteRoutes = () => {
 	// --- JSON API ---
 
 	app.get("/api/sites", requireAuth, (c) => {
-		const sites = listSites.all();
+		const sites = accessibleSites(c.var.user!).map((s) => ({
+			id: s.id,
+			name: s.name,
+			trackingId: s.trackingId,
+			primaryDomain: s.primaryDomain,
+			timezone: s.timezone,
+			autoAcceptDomains: Number(s.autoAcceptDomains) === 1,
+			createdAt: s.createdAt,
+		}));
 		return c.json({ sites });
 	});
 
@@ -121,6 +141,9 @@ export const siteRoutes = () => {
 		const result = createSite.get(user.id, body.name, trackingId, body.timezone);
 		if (!result) return c.json({ error: "Failed to create site" }, 500);
 		const siteId = result.id;
+
+		// Auto-assign site to creator.
+		assignSiteToUser.run(user.id, siteId);
 
 		// Add domains — first domain becomes primary.
 		const domains = body.domains.map(normalizeDomain).filter(Boolean);
@@ -135,7 +158,7 @@ export const siteRoutes = () => {
 
 	app.get("/api/sites/:id", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = siteWithDomains(id);
+		const site = siteWithDomains(id, c.var.user!);
 		if (!site) return c.json({ error: "Site not found" }, 404);
 		return c.json({ site });
 	});
@@ -146,6 +169,8 @@ export const siteRoutes = () => {
 		validateJson(updateSiteBody),
 		(c) => {
 			const id = Number(c.req.param("id"));
+			if (!canAccessSite(id, c.var.user!))
+				return c.json({ error: "Site not found" }, 404);
 			const body = c.req.valid("json") as Static<typeof updateSiteBody>;
 			updateSite.run(body.name, body.timezone, body.auto_accept_domains, id);
 			return c.json({ ok: true });
@@ -154,6 +179,8 @@ export const siteRoutes = () => {
 
 	app.delete("/api/sites/:id", requireAuth, async (c) => {
 		const id = Number(c.req.param("id"));
+		if (!canAccessSite(id, c.var.user!))
+			return c.json({ error: "Site not found" }, 404);
 		deleteSite.run(id);
 		// Clean up ClickHouse events for this site.
 		try {
@@ -170,6 +197,8 @@ export const siteRoutes = () => {
 		validateJson(addDomainBody),
 		(c) => {
 			const id = Number(c.req.param("id"));
+			if (!canAccessSite(id, c.var.user!))
+				return c.json({ error: "Site not found" }, 404);
 			const domain = normalizeDomain(c.req.valid("json").domain);
 			if (!domain) return c.json({ error: "Invalid domain" }, 422);
 			try {
@@ -183,6 +212,8 @@ export const siteRoutes = () => {
 
 	app.delete("/api/sites/:id/domains/:domainId", requireAuth, (c) => {
 		const siteId = Number(c.req.param("id"));
+		if (!canAccessSite(siteId, c.var.user!))
+			return c.json({ error: "Site not found" }, 404);
 		const domainId = Number(c.req.param("domainId"));
 		removeDomain.run(domainId, siteId);
 		return c.json({ ok: true });
@@ -194,6 +225,8 @@ export const siteRoutes = () => {
 		validateJson(setPrimaryBody),
 		(c) => {
 			const id = Number(c.req.param("id"));
+			if (!canAccessSite(id, c.var.user!))
+				return c.json({ error: "Site not found" }, 404);
 			const domain = normalizeDomain(c.req.valid("json").domain);
 			setPrimaryDomain.get(domain, id);
 			return c.json({ ok: true });

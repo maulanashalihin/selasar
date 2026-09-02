@@ -278,6 +278,169 @@ describe("roles & admin", () => {
 	});
 });
 
+describe("per-site access control", () => {
+	async function createSiteViaApi(cookie: string, name: string): Promise<number> {
+		const res = await call("/api/sites", {
+			method: "POST",
+			headers: xhr,
+			cookie,
+			body: { name, timezone: "UTC", domains: ["example.com"] },
+		});
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		return body.id;
+	}
+
+	interface ApiSite { id: number; name: string }
+	function hasSite(sites: ApiSite[], siteId: number): boolean {
+		return sites.some((s) => s.id === siteId)
+	}
+
+	async function assignSite(adminCookie: string, userId: number, siteId: number): Promise<void> {
+		const res = await call(`/admin/api/users/${userId}/sites/${siteId}`, {
+			method: "POST",
+			headers: xhr,
+			cookie: adminCookie,
+		});
+		expect(res.status).toBe(200);
+	}
+
+	async function login(email: string): Promise<string> {
+		const res = await call("/login", {
+			method: "POST",
+			headers: xhr,
+			body: { email, password: "password123" },
+		});
+		return sessionCookie(res);
+	}
+
+	it("creator is auto-assigned to their site", async () => {
+		const cookie = await createUser("creator@example.com");
+		const siteId = await createSiteViaApi(cookie, "My Site");
+
+		// Creator can see the site in their list
+		const res = await call("/api/sites", { headers: xhr, cookie });
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(hasSite(body.sites as ApiSite[], siteId)).toBe(true);
+	});
+
+	it("user without assignment cannot see site", async () => {
+		const ownerCookie = await createUser("owner2@example.com");
+		const otherCookie = await createUser("other2@example.com");
+		const siteId = await createSiteViaApi(ownerCookie, "Owner Site");
+
+		// Other user should NOT see the site
+		const res = await call("/api/sites", { headers: xhr, cookie: otherCookie });
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(hasSite(body.sites as ApiSite[], siteId)).toBe(false);
+
+		// Other user gets 404 on site detail
+		const detail = await call(`/api/sites/${siteId}`, { headers: xhr, cookie: otherCookie });
+		expect(detail.status).toBe(404);
+
+		// Other user gets 404 on analytics page
+		const analytics = await call(`/sites/${siteId}/analytics`, { headers: xhr, cookie: otherCookie });
+		// Inertia XHR returns 404 page as JSON with 404 status
+		expect(analytics.status).toBe(404);
+	});
+
+	it("admin can assign site to user and user gains access", async () => {
+		const { createUserWithRole } = await import("../src/server/db");
+		const { hashPassword } = await import("../src/server/auth");
+		const hash = await hashPassword("password123");
+		createUserWithRole.get("Admin", "admin-ac@example.com", hash, "admin");
+
+		const ownerCookie = await createUser("owner3@example.com");
+		const adminCookie = await login("admin-ac@example.com");
+		const siteId = await createSiteViaApi(ownerCookie, "Assign Site");
+
+		// Create a regular user to assign to
+		const targetUserId = createUserWithRole.get("Target", "target@example.com", hash, "user")!.id;
+
+		// Before assignment, target cannot see site
+		const targetCookie = await login("target@example.com");
+		const before = await call("/api/sites", { headers: xhr, cookie: targetCookie });
+		const beforeBody = await before.json();
+		expect(hasSite(beforeBody.sites as ApiSite[], siteId)).toBe(false);
+
+		// Admin assigns site
+		await assignSite(adminCookie, targetUserId, siteId);
+
+		// After assignment, target can see site
+		const after = await call("/api/sites", { headers: xhr, cookie: targetCookie });
+		const afterBody = await after.json();
+		expect(hasSite(afterBody.sites as ApiSite[], siteId)).toBe(true);
+	});
+
+	it("admin sees all sites regardless of assignment", async () => {
+		const { createUserWithRole } = await import("../src/server/db");
+		const { hashPassword } = await import("../src/server/auth");
+		const hash = await hashPassword("password123");
+		createUserWithRole.get("Admin2", "admin-all@example.com", hash, "admin");
+
+		const ownerCookie = await createUser("owner4@example.com");
+		const adminCookie = await login("admin-all@example.com");
+		const siteId = await createSiteViaApi(ownerCookie, "Admin View Site");
+
+		const res = await call("/api/sites", { headers: xhr, cookie: adminCookie });
+		const body = await res.json();
+		expect(hasSite(body.sites as ApiSite[], siteId)).toBe(true);
+	});
+
+	it("admin can list all sites for assignment", async () => {
+		const { createUserWithRole } = await import("../src/server/db");
+		const { hashPassword } = await import("../src/server/auth");
+		const hash = await hashPassword("password123");
+		createUserWithRole.get("Admin3", "admin-list@example.com", hash, "admin");
+
+		const ownerCookie = await createUser("owner5@example.com");
+		await createSiteViaApi(ownerCookie, "List Site");
+		const adminCookie = await login("admin-list@example.com");
+
+		const res = await call("/admin/api/sites", { headers: xhr, cookie: adminCookie });
+		expect(res.status).toBe(200);
+		const body = await res.json();
+		expect(body.sites.length).toBeGreaterThan(0);
+	});
+
+	it("admin can remove site access from user", async () => {
+		const { createUserWithRole } = await import("../src/server/db");
+		const { hashPassword } = await import("../src/server/auth");
+		const hash = await hashPassword("password123");
+		createUserWithRole.get("Admin4", "admin-rm@example.com", hash, "admin");
+
+		const ownerCookie = await createUser("owner6@example.com");
+		const adminCookie = await login("admin-rm@example.com");
+		const siteId = await createSiteViaApi(ownerCookie, "Remove Site");
+
+		const targetUserId = createUserWithRole.get("Target2", "target2@example.com", hash, "user")!.id;
+		await assignSite(adminCookie, targetUserId, siteId);
+
+		const targetCookie = await login("target2@example.com");
+
+		// Verify access granted
+		const before = await call("/api/sites", { headers: xhr, cookie: targetCookie });
+		const beforeBody = await before.json();
+		expect(hasSite(beforeBody.sites as ApiSite[], siteId)).toBe(true);
+
+		// Admin removes access
+		const res = await call(`/admin/api/users/${targetUserId}/sites/${siteId}`, {
+			method: "DELETE",
+			headers: xhr,
+			cookie: adminCookie,
+		});
+		expect(res.status).toBe(200);
+
+		// Verify access removed — need fresh login to get new session
+		const targetCookie2 = await login("target2@example.com");
+		const after = await call("/api/sites", { headers: xhr, cookie: targetCookie2 });
+		const afterBody = await after.json();
+		expect(hasSite(afterBody.sites as ApiSite[], siteId)).toBe(false);
+	});
+});
+
 describe("password reset", () => {
 	it("answers identically for known and unknown emails (no enumeration)", async () => {
 		await createUser("resetme@example.com");

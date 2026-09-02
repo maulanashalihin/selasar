@@ -17,7 +17,7 @@ import type { Next } from "hono";
 import type { Context } from "hono";
 import { getCookie } from "hono/cookie";
 import type { FlashData, Site, User } from "../shared/types";
-import { listSites, toPublicUser } from "./db";
+import { accessibleSites, toPublicUser } from "./db";
 import { readFlash, resolveUser, SESSION_COOKIE } from "./auth";
 import { Inertia, type InertiaAssets } from "./inertia";
 
@@ -53,17 +53,17 @@ export const inertiaMiddleware =
 				request: c.req.raw,
 				headers: Object.fromEntries(c.req.raw.headers.entries()),
 				user,
-				sites: user
-					? listSites.all().map((s) => ({
-							id: s.id,
-							name: s.name,
-							trackingId: s.trackingId,
-							primaryDomain: s.primaryDomain,
-							timezone: s.timezone,
-							autoAcceptDomains: Number(s.autoAcceptDomains) === 1,
-							createdAt: s.createdAt,
-						}))
-					: [],
+			sites: user
+				? accessibleSites(user).map((s) => ({
+						id: s.id,
+						name: s.name,
+						trackingId: s.trackingId,
+						primaryDomain: s.primaryDomain,
+						timezone: s.timezone,
+						autoAcceptDomains: Number(s.autoAcceptDomains) === 1,
+						createdAt: s.createdAt,
+					}))
+				: [],
 				flash,
 				sessionToken,
 				cspNonce,

@@ -1,12 +1,12 @@
 /**
  * Analytics API routes — ClickHouse query endpoints.
- * All endpoints require auth (internal tool, all users access all sites).
+ * Per-site access control: users see only assigned sites; admins see all.
  * Returns JSON for Inertia SPA navigation + client-side refetch.
  */
 import { Hono } from "hono";
 import { requireAuth } from "../auth";
 import { chQuery } from "../clickhouse";
-import { findSiteById } from "../db";
+import { accessibleSite, canAccessSite } from "../db";
 import { config } from "../config";
 import type { AppEnv } from "../inertia-middleware";
 
@@ -84,56 +84,56 @@ export const analyticsRoutes = () => {
 
 	app.get("/sites/:id/analytics/realtime", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = findSiteById.get(id);
+		const site = accessibleSite(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("analytics/Realtime", { site });
 	});
 
 	app.get("/sites/:id/analytics/pages", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = findSiteById.get(id);
+		const site = accessibleSite(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("analytics/Pages", { site });
 	});
 
 	app.get("/sites/:id/analytics/sources", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = findSiteById.get(id);
+		const site = accessibleSite(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("analytics/Sources", { site });
 	});
 
 	app.get("/sites/:id/analytics/devices", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = findSiteById.get(id);
+		const site = accessibleSite(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("analytics/Devices", { site });
 	});
 
 	app.get("/sites/:id/analytics/geography", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = findSiteById.get(id);
+		const site = accessibleSite(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("analytics/Geography", { site });
 	});
 
 	app.get("/sites/:id/analytics/conversions", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = findSiteById.get(id);
+		const site = accessibleSite(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("analytics/Conversions", { site });
 	});
 
 	app.get("/sites/:id/analytics/campaigns", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = findSiteById.get(id);
+		const site = accessibleSite(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("analytics/Campaigns", { site });
 	});
 
 	app.get("/sites/:id/analytics/tracking", requireAuth, (c) => {
 		const id = Number(c.req.param("id"));
-		const site = findSiteById.get(id);
+		const site = accessibleSite(id, c.var.user!);
 		if (!site) return c.var.inertia.render("NotFound", {}, { status: 404 });
 		return c.var.inertia.render("analytics/Tracking", { site, appUrl: config.appUrl });
 	});
@@ -145,6 +145,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/overview", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "7d";
 		const from = c.req.query("from");
 		const to = c.req.query("to");
@@ -219,6 +220,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/traffic", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "7d";
 		const metric = c.req.query("metric") ?? "visitors";
 		const from = c.req.query("from");
@@ -278,6 +280,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/pages", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "7d";
 		const type = c.req.query("type") ?? "top";
 		const from = c.req.query("from");
@@ -325,6 +328,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/sources", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "7d";
 		const type = c.req.query("type") ?? "sources";
 		const from = c.req.query("from");
@@ -378,6 +382,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/devices", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "7d";
 		const type = c.req.query("type") ?? "devices";
 		const from = c.req.query("from");
@@ -409,6 +414,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/geography", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "7d";
 		const type = c.req.query("type") ?? "countries";
 		const from = c.req.query("from");
@@ -441,6 +447,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/realtime", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 
 		const [visitorRows, pageRows, sourceRows, countryRows, deviceRows] = await Promise.all([
 			chQuery<{ active_visitors: number }>(
@@ -474,6 +481,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/conversions", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "28d";
 		const dateFilter = rangeFilter(range);
 
@@ -502,6 +510,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/campaigns", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "28d";
 		const dateFilter = rangeFilter(range);
 
@@ -517,6 +526,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/visitor-types", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "28d";
 		const from = c.req.query("from");
 		const to = c.req.query("to");
@@ -542,6 +552,7 @@ export const analyticsRoutes = () => {
 	app.get("/api/analytics/campaigns/detail", requireAuth, async (c) => {
 		const siteId = Number(c.req.query("site_id"));
 		if (!siteId) return c.json({ error: "site_id required" }, 400);
+if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found" }, 404);
 		const range = c.req.query("range") ?? "28d";
 		const from = c.req.query("from");
 		const to = c.req.query("to");

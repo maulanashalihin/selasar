@@ -17,4 +17,7 @@ data/
 clickhouse-data/
 .svelte-css-cache/
 site/.astro/
+.selasar/
+cores/
+graphify-out/
 uuid

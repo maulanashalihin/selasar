@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Link, router, usePage } from '@inertiajs/svelte'
 	import Layout from '../../components/Layout.svelte'
-	import type { Paginated, Role, User } from '../../../shared/types'
+	import type { Paginated, Role, Site, User } from '../../../shared/types'
 
-	let { users }: { users: Paginated<User> } = $props()
+	let { users, siteCounts }: { users: Paginated<User>; siteCounts: Record<number, number> } = $props()
 
 	const page = usePage()
 	const currentUser = $derived(page.props.auth.user)
@@ -15,6 +15,12 @@
 	let email = $state('')
 	let password = $state('')
 	let role = $state<Role>('user')
+	let allSites: Site[] = $state([])
+	let userSiteIds: Record<number, number[]> = $state({})
+	let expandedUserId: number | null = $state(null)
+	let siteError = $state<string | null>(null)
+	let sitesLoading = $state(false)
+	let siteToast = $state<string | null>(null)
 	let submitting = $state(false)
 	let error = $state<string | null>(null)
 	let nameError = $state<string | null>(null)
@@ -149,26 +155,106 @@
 			error = 'Network error. Please try again.'
 		}
 	}
+
+	async function loadSites() {
+		try {
+			const res = await fetch('/admin/api/sites', {
+				headers: { 'x-inertia': 'true' },
+			})
+			if (res.ok) {
+				const body = await res.json()
+				allSites = body.sites
+			}
+		} catch {
+			/* ignore — sites panel just won't load */
+		}
+	}
+
+	async function loadUserSites(userId: number) {
+		try {
+			const res = await fetch(`/admin/api/users/${userId}/sites`, {
+				headers: { 'x-inertia': 'true' },
+			})
+			if (res.ok) {
+				const body = await res.json()
+				userSiteIds[userId] = body.siteIds
+			}
+		} catch {
+			userSiteIds[userId] = []
+		}
+	}
+
+	async function toggleSite(userId: number, siteId: number, checked: boolean) {
+		siteError = null
+		try {
+			const res = await fetch(
+				`/admin/api/users/${userId}/sites/${siteId}`,
+				{
+					method: checked ? 'POST' : 'DELETE',
+					headers: { 'x-inertia': 'true' },
+				},
+			)
+			if (!res.ok) {
+				siteError = 'Failed to update site access.'
+				return
+			}
+			const current = userSiteIds[userId] ?? []
+			userSiteIds[userId] = checked
+				? [...current, siteId]
+				: current.filter((id) => id !== siteId)
+			siteCounts[userId] = userSiteIds[userId].length
+			siteToast = checked ? 'Site access granted' : 'Site access removed'
+			setTimeout(() => (siteToast = null), 2000)
+		} catch {
+			siteError = 'Network error. Please try again.'
+		}
+	}
+
+	async function toggleExpand(userId: number) {
+		if (expandedUserId === userId) {
+			expandedUserId = null
+			return
+		}
+		expandedUserId = userId
+		if (!(userId in userSiteIds)) {
+			sitesLoading = true
+			await loadUserSites(userId)
+			sitesLoading = false
+		}
+	}
+
+	// Load all sites on mount for the assignment panel.
+	$effect(() => {
+		void loadSites()
+	})
 </script>
 
 <svelte:head><title>User Management</title></svelte:head>
 
 <Layout>
-	<h1 class="text-[1.6rem] m-0 mb-1 tracking-tight">User Management</h1>
-	<p class="text-muted mb-4">
-		{users.meta.total} user{users.meta.total === 1 ? '' : 's'} total.
-	</p>
-
-	{#if error}
-		<p class="text-danger text-sm mb-4">{error}</p>
-	{/if}
-
-	<div class="flex items-center justify-between gap-3 mb-4">
-		<span></span>
+	<div class="flex items-center justify-between gap-4 mb-6">
+		<div>
+			<h1 class="text-[1.6rem] m-0 tracking-tight">User Management</h1>
+			<p class="text-muted text-sm mt-0.5">
+				{users.meta.total} user{users.meta.total === 1 ? '' : 's'} total
+			</p>
+		</div>
 		{#if !showForm}
 			<button class="btn btn-primary" onclick={openForm}>Create User</button>
 		{/if}
 	</div>
+
+	{#if error}
+		<div class="bg-danger/10 border border-danger/20 text-danger text-sm rounded-lg px-4 py-3 mb-4">
+			{error}
+		</div>
+	{/if}
+
+	{#if siteToast}
+		<div class="bg-primary-soft border border-primary/20 text-primary text-sm rounded-lg px-4 py-3 mb-4 animate-[fade-in_0.2s_ease]">
+			{siteToast}
+		</div>
+	{/if}
 
 	{#if showForm}
 		<form
@@ -177,66 +263,31 @@
 			class="bg-surface border border-border rounded-radius p-5 mb-6 shadow-card"
 		>
 			<div class="flex items-center justify-between mb-4">
-				<h2 class="text-lg font-semibold m-0">Create a new user</h2>
-				<button
-					type="button"
-					class="btn btn-ghost"
-					onclick={closeForm}
-					disabled={submitting}
-				>Cancel</button>
+				<h2 class="text-base font-semibold m-0">New User</h2>
+				<button type="button" class="text-muted hover:text-text text-sm cursor-pointer" onclick={closeForm}>Cancel</button>
 			</div>
 
 			<div class="grid gap-4 mb-4">
 				<div>
-					<label for="user-name" class="block text-sm font-medium mb-1.5">Name</label>
-					<input
-						id="user-name"
-						type="text"
-						class={inputClass}
-						bind:value={name}
-						placeholder="Jane Doe"
-						disabled={submitting}
-					/>
-					{#if nameError}
-						<p class="text-danger text-xs mt-1">{nameError}</p>
-					{/if}
+					<label for="name" class="block text-sm font-medium mb-1.5">Name</label>
+					<input id="name" class={inputClass} bind:value={name} placeholder="Jane Doe" />
+					{#if nameError}<p class="text-danger text-xs mt-1">{nameError}</p>{/if}
 				</div>
-
 				<div>
-					<label for="user-email" class="block text-sm font-medium mb-1.5">Email</label>
-					<input
-						id="user-email"
-						type="text"
-						class={inputClass}
-						bind:value={email}
-						placeholder="jane@example.com"
-						disabled={submitting}
-					/>
-					{#if emailError}
-						<p class="text-danger text-xs mt-1">{emailError}</p>
-					{/if}
+					<label for="email" class="block text-sm font-medium mb-1.5">Email</label>
+					<input id="email" type="email" class={inputClass} bind:value={email} placeholder="jane@example.com" />
+					{#if emailError}<p class="text-danger text-xs mt-1">{emailError}</p>{/if}
 				</div>
-
 				<div>
-					<label for="user-password" class="block text-sm font-medium mb-1.5">Password</label>
-					<input
-						id="user-password"
-						type="text"
-						class={inputClass}
-						bind:value={password}
-						placeholder="At least 8 characters"
-						disabled={submitting}
-					/>
-					{#if passwordError}
-						<p class="text-danger text-xs mt-1">{passwordError}</p>
-					{/if}
+					<label for="password" class="block text-sm font-medium mb-1.5">Password</label>
+					<input id="password" type="password" class={inputClass} bind:value={password} placeholder="Min. 8 characters" />
+					{#if passwordError}<p class="text-danger text-xs mt-1">{passwordError}</p>{/if}
 				</div>
-
 				<div>
-					<label for="user-role" class="block text-sm font-medium mb-1.5">Role</label>
-					<select id="user-role" class={inputClass} bind:value={role} disabled={submitting}>
-						<option value="user">User</option>
-						<option value="admin">Admin</option>
+					<label for="role" class="block text-sm font-medium mb-1.5">Role</label>
+					<select id="role" class={inputClass} bind:value={role}>
+						<option value="user">User — access assigned sites only</option>
+						<option value="admin">Admin — access all sites</option>
 					</select>
 				</div>
 			</div>
@@ -247,26 +298,38 @@
 		</form>
 	{/if}
 
-	<section class="bg-surface border border-border rounded-radius p-6">
+	<!-- Desktop: table (≥640px) -->
+	<section class="hidden sm:block bg-surface border border-border rounded-radius shadow-card overflow-hidden">
 		<div class="overflow-x-auto">
 			<table class="w-full border-collapse text-sm">
 				<thead>
-					<tr>
-						<th class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap text-muted text-xs uppercase tracking-wider bg-bg">Name</th>
-						<th class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap text-muted text-xs uppercase tracking-wider bg-bg">Email</th>
-						<th class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap text-muted text-xs uppercase tracking-wider bg-bg">Role</th>
-						<th class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap text-muted text-xs uppercase tracking-wider bg-bg">Joined</th>
-						<th class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap text-muted text-xs uppercase tracking-wider bg-bg">Actions</th>
+					<tr class="border-b border-border">
+						<th class="text-left px-4 py-3 text-muted text-xs uppercase tracking-wider font-medium">Name</th>
+						<th class="text-left px-4 py-3 text-muted text-xs uppercase tracking-wider font-medium">Role</th>
+						<th class="text-left px-4 py-3 text-muted text-xs uppercase tracking-wider font-medium">Sites</th>
+						<th class="text-left px-4 py-3 text-muted text-xs uppercase tracking-wider font-medium">Joined</th>
+						<th class="text-right px-4 py-3 text-muted text-xs uppercase tracking-wider font-medium">Actions</th>
 					</tr>
 				</thead>
-				<tbody class="[&>tr:last-child>td]:border-b-0">
-					{#each users.data as u (u.id)}
-						<tr class="transition-colors hover:bg-primary-soft">
-							<td class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap">{u.name}</td>
-							<td class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap">{u.email}</td>
-							<td class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap">
+				<tbody>
+					{#each users.data as u, i (u.id)}
+						<tr
+							class="border-b border-border transition-colors hover:bg-primary-soft/50 {i === users.data.length - 1 && expandedUserId !== u.id ? 'border-b-0' : ''}"
+						>
+							<td class="px-4 py-3">
+								<div class="flex items-center gap-3">
+									<div class="w-9 h-9 rounded-full bg-primary-soft text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+										{u.name.slice(0, 2).toUpperCase()}
+									</div>
+									<div class="min-w-0">
+										<div class="font-medium truncate">{u.name}</div>
+										<div class="text-muted text-xs truncate">{u.email}</div>
+									</div>
+								</div>
+							</td>
+							<td class="px-4 py-3">
 								<select
-									class="px-2 py-1 border border-border rounded-lg bg-bg text-text text-sm capitalize focus:outline-2 focus:outline-primary focus:-outline-offset-1"
+									class="px-2.5 py-1.5 border border-border rounded-lg bg-bg text-text text-sm capitalize cursor-pointer focus:outline-2 focus:outline-primary focus:-outline-offset-1"
 									value={u.role}
 									onchange={(e) => changeRole(u, (e.target as HTMLSelectElement).value as Role)}
 									aria-label="Role for {u.name}"
@@ -275,8 +338,41 @@
 									<option value="admin">admin</option>
 								</select>
 							</td>
-							<td class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap">{formatDate(u.createdAt)}</td>
-							<td class="text-left px-3 py-2.5 border-b border-border whitespace-nowrap">
+							<td class="px-4 py-3">
+								{#if u.role === 'admin'}
+									<span class="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary-soft px-2.5 py-1 rounded-full">
+										<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+											<path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z" />
+										</svg>
+										All sites
+									</span>
+								{:else}
+									<button
+										class="inline-flex items-center gap-1.5 text-sm cursor-pointer text-text hover:text-primary transition-colors"
+										onclick={() => toggleExpand(u.id)}
+										aria-expanded={expandedUserId === u.id}
+									>
+										<span class="font-medium">{siteCounts[u.id] ?? 0}</span>
+										<span class="text-muted">site{(siteCounts[u.id] ?? 0) === 1 ? '' : 's'}</span>
+										<svg
+											viewBox="0 0 24 24"
+											width="14"
+											height="14"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											class="transition-transform duration-200 {expandedUserId === u.id ? 'rotate-90' : ''}"
+											aria-hidden="true"
+										>
+											<polyline points="9 18 15 12 9 6" />
+										</svg>
+									</button>
+								{/if}
+							</td>
+							<td class="px-4 py-3 text-muted whitespace-nowrap">{formatDate(u.createdAt)}</td>
+							<td class="px-4 py-3 text-right">
 								<button
 									class="text-danger hover:underline cursor-pointer text-sm disabled:text-muted disabled:cursor-not-allowed disabled:no-underline"
 									onclick={() => deleteUser(u)}
@@ -285,16 +381,172 @@
 								>Delete</button>
 							</td>
 						</tr>
+						{#if expandedUserId === u.id && u.role !== 'admin'}
+							<tr class="border-b border-border {i === users.data.length - 1 ? 'border-b-0' : ''}">
+								<td colspan={5} class="px-4 py-0">
+									<div class="bg-bg rounded-lg my-3 p-4 border border-border">
+										<div class="flex items-center justify-between mb-3">
+											<span class="text-xs font-semibold uppercase tracking-wider text-muted">Site Access</span>
+											{#if siteError}
+												<span class="text-danger text-xs">{siteError}</span>
+											{/if}
+										</div>
+										{#if sitesLoading}
+											<div class="flex items-center gap-2 text-muted text-sm py-2">
+												<svg class="animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+													<path d="M21 12a9 9 0 1 1-6.219-8.56" />
+												</svg>
+												Loading sites…
+											</div>
+										{:else if allSites.length === 0}
+											<p class="text-muted text-sm py-2">No sites created yet.</p>
+										{:else}
+											<div class="grid grid-cols-2 lg:grid-cols-3 gap-2">
+												{#each allSites as site (site.id)}
+													<label
+														class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors {(userSiteIds[u.id] ?? []).includes(site.id) ? 'border-primary/30 bg-primary-soft/50' : 'border-border hover:bg-surface'}"
+													>
+														<input
+															type="checkbox"
+															class="accent-primary w-4 h-4 cursor-pointer shrink-0"
+															checked={(userSiteIds[u.id] ?? []).includes(site.id)}
+															onchange={(e) => toggleSite(u.id, site.id, (e.target as HTMLInputElement).checked)}
+														/>
+														<div class="min-w-0">
+															<div class="text-sm font-medium truncate">{site.name}</div>
+															{#if site.primaryDomain}
+																<div class="text-muted text-xs truncate">{site.primaryDomain}</div>
+															{/if}
+														</div>
+													</label>
+												{/each}
+											</div>
+										{/if}
+									</div>
+								</td>
+							</tr>
+						{/if}
 					{/each}
 					{#if users.data.length === 0}
 						<tr>
-							<td colspan={5} class="text-center text-muted p-6">No users yet.</td>
+							<td colspan={5} class="text-center text-muted py-12">No users yet.</td>
 						</tr>
 					{/if}
 				</tbody>
 			</table>
 		</div>
 	</section>
+
+	<!-- Mobile: card list (<640px) -->
+	<div class="sm:hidden flex flex-col gap-3">
+		{#each users.data as u (u.id)}
+			<div class="bg-surface border border-border rounded-radius shadow-card p-4">
+				<div class="flex items-start gap-3 mb-3">
+					<div class="w-10 h-10 rounded-full bg-primary-soft text-primary flex items-center justify-center text-sm font-semibold shrink-0">
+						{u.name.slice(0, 2).toUpperCase()}
+					</div>
+					<div class="min-w-0 flex-1">
+						<div class="font-medium truncate">{u.name}</div>
+						<div class="text-muted text-xs truncate">{u.email}</div>
+					</div>
+					<button
+						class="text-danger text-sm cursor-pointer disabled:text-muted disabled:cursor-not-allowed shrink-0"
+						onclick={() => deleteUser(u)}
+						disabled={currentUser != null && u.id === currentUser.id}
+					>Delete</button>
+				</div>
+				<div class="flex items-center justify-between gap-3 pt-3 border-t border-border">
+					<div class="flex items-center gap-2">
+						<select
+							class="px-2.5 py-1.5 border border-border rounded-lg bg-bg text-text text-sm capitalize cursor-pointer focus:outline-2 focus:outline-primary focus:-outline-offset-1"
+							value={u.role}
+							onchange={(e) => changeRole(u, (e.target as HTMLSelectElement).value as Role)}
+							aria-label="Role for {u.name}"
+						>
+							<option value="user">user</option>
+							<option value="admin">admin</option>
+						</select>
+						<span class="text-muted text-xs">{formatDate(u.createdAt)}</span>
+					</div>
+					{#if u.role === 'admin'}
+						<span class="inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-primary-soft px-2.5 py-1 rounded-full">
+							<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+								<path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z" />
+							</svg>
+							All sites
+						</span>
+					{:else}
+						<button
+							class="inline-flex items-center gap-1 text-sm cursor-pointer text-text shrink-0"
+							onclick={() => toggleExpand(u.id)}
+							aria-expanded={expandedUserId === u.id}
+						>
+							<span class="font-medium">{siteCounts[u.id] ?? 0}</span>
+							<span class="text-muted">site{(siteCounts[u.id] ?? 0) === 1 ? '' : 's'}</span>
+							<svg
+								viewBox="0 0 24 24"
+								width="14"
+								height="14"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								class="transition-transform duration-200 {expandedUserId === u.id ? 'rotate-90' : ''}"
+								aria-hidden="true"
+							>
+								<polyline points="9 18 15 12 9 6" />
+							</svg>
+						</button>
+					{/if}
+				</div>
+				{#if expandedUserId === u.id && u.role !== 'admin'}
+					<div class="mt-3 pt-3 border-t border-border">
+						<div class="flex items-center justify-between mb-2.5">
+							<span class="text-xs font-semibold uppercase tracking-wider text-muted">Site Access</span>
+							{#if siteError}
+								<span class="text-danger text-xs">{siteError}</span>
+							{/if}
+						</div>
+						{#if sitesLoading}
+							<div class="flex items-center gap-2 text-muted text-sm py-2">
+								<svg class="animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+									<path d="M21 12a9 9 0 1 1-6.219-8.56" />
+								</svg>
+								Loading sites…
+							</div>
+						{:else if allSites.length === 0}
+							<p class="text-muted text-sm py-2">No sites created yet.</p>
+						{:else}
+							<div class="grid grid-cols-1 gap-2">
+								{#each allSites as site (site.id)}
+									<label
+										class="flex items-center gap-3 px-3 py-3 rounded-lg border cursor-pointer transition-colors {(userSiteIds[u.id] ?? []).includes(site.id) ? 'border-primary/30 bg-primary-soft/50' : 'border-border'}"
+									>
+										<input
+											type="checkbox"
+											class="accent-primary w-5 h-5 cursor-pointer shrink-0"
+											checked={(userSiteIds[u.id] ?? []).includes(site.id)}
+											onchange={(e) => toggleSite(u.id, site.id, (e.target as HTMLInputElement).checked)}
+										/>
+										<div class="min-w-0">
+											<div class="text-sm font-medium truncate">{site.name}</div>
+											{#if site.primaryDomain}
+												<div class="text-muted text-xs truncate">{site.primaryDomain}</div>
+											{/if}
+										</div>
+									</label>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+		{/each}
+		{#if users.data.length === 0}
+			<div class="text-center text-muted py-12">No users yet.</div>
+		{/if}
+	</div>
 
 	<nav class="flex items-center justify-between gap-4 mt-4" aria-label="Pagination">
 		{#if currentPage > 1}

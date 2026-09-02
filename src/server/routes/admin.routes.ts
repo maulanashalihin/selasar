@@ -1,5 +1,6 @@
 /**
- * Admin routes — user management (create, list, delete, update role).
+ * Admin routes — user management (create, list, delete, update role)
+ * and per-site access assignment.
  * Internal tool: no public registration. Admin creates accounts here.
  * All endpoints require requireRole("admin").
  */
@@ -7,17 +8,22 @@ import { Type as t, type Static } from "@sinclair/typebox";
 import { Hono } from "hono";
 import { hashPassword, requireRole } from "../auth";
 import {
+	assignSiteToUser,
+	countSitesPerUser,
 	countUsers,
 	createUserWithRole,
 	deleteUser,
 	findUserByEmail,
 	findUserById,
+	listAssignedSiteIds,
+	listSites,
 	listUsers,
 	toPublicUser,
+	unassignSiteFromUser,
 	updateUserRole,
 } from "../db";
 import type { AppEnv } from "../inertia-middleware";
-import type { Paginated, User } from "../../shared/types";
+import type { Paginated, Site, User } from "../../shared/types";
 import { validateJson } from "../validation";
 
 const createUserBody = t.Object(
@@ -51,8 +57,14 @@ export const adminRoutes = () => {
 			Math.max(1, Number(c.req.query("perPage") ?? 10) || 10),
 		);
 		const total = countUsers.get()?.n ?? 0;
+		const userData = listUsers.all(perPage, (page - 1) * perPage).map(toPublicUser);
+		// Build a userId → siteCount map for the current page.
+		const siteCounts: Record<number, number> = {};
+		for (const row of countSitesPerUser.all()) {
+			siteCounts[row.userId] = row.n;
+		}
 		const users: Paginated<User> = {
-			data: listUsers.all(perPage, (page - 1) * perPage).map(toPublicUser),
+			data: userData,
 			meta: {
 				currentPage: page,
 				perPage,
@@ -60,7 +72,7 @@ export const adminRoutes = () => {
 				total,
 			},
 		};
-		return c.var.inertia.render("admin/Users", { users });
+		return c.var.inertia.render("admin/Users", { users, siteCounts });
 	});
 
 	// --- JSON API ---
@@ -135,6 +147,57 @@ export const adminRoutes = () => {
 			if (!target) return c.json({ error: "User not found" }, 404);
 
 			updateUserRole.run(body.role, id);
+			return c.json({ ok: true });
+		},
+	);
+
+	// --- Per-site access assignment ---
+
+	/** All sites for the assignment dropdown (admin sees all). */
+	app.get("/admin/api/sites", requireRole("admin"), (c) => {
+		const sites: Site[] = listSites.all().map((s) => ({
+			id: s.id,
+			name: s.name,
+			trackingId: s.trackingId,
+			primaryDomain: s.primaryDomain,
+			timezone: s.timezone,
+			autoAcceptDomains: Number(s.autoAcceptDomains) === 1,
+			createdAt: s.createdAt,
+		}));
+		return c.json({ sites });
+	});
+
+	/** Site IDs assigned to a user. */
+	app.get("/admin/api/users/:id/sites", requireRole("admin"), (c) => {
+		const id = Number(c.req.param("id"));
+		if (!findUserById.get(id))
+			return c.json({ error: "User not found" }, 404);
+		const siteIds = listAssignedSiteIds.all(id).map((r) => r.siteId);
+		return c.json({ siteIds });
+	});
+
+	/** Assign site to user (idempotent). */
+	app.post(
+		"/admin/api/users/:id/sites/:siteId",
+		requireRole("admin"),
+		(c) => {
+			const id = Number(c.req.param("id"));
+			const siteId = Number(c.req.param("siteId"));
+			if (!findUserById.get(id))
+				return c.json({ error: "User not found" }, 404);
+			assignSiteToUser.run(id, siteId);
+			return c.json({ ok: true });
+		},
+	);
+
+	/** Remove site access from user. */
+	app.delete(
+		"/admin/api/users/:id/sites/:siteId",
+		requireRole("admin"),
+		(c) => {
+			const id = Number(c.req.param("id"));
+			const siteId = Number(c.req.param("siteId"));
+			unassignSiteFromUser.run(id, siteId);
 			return c.json({ ok: true });
 		},
 	);
