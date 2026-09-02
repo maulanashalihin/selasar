@@ -36,6 +36,15 @@ export interface AppEnv {
 
 export const inertiaMiddleware =
 	(assets: InertiaAssets) => async (c: Context<AppEnv>, next: Next) => {
+		// Skip session/CSP work for public tracking endpoint — fire-and-forget 204.
+		if (c.req.raw.url.includes("/api/event")) {
+			c.set("user", null);
+			c.set("flash", {});
+			c.set("sessionToken", null);
+			c.set("cspNonce", "");
+			c.set("inertia", new Inertia({ request: c.req.raw, headers: {}, user: null, sites: [], flash: {}, sessionToken: null, cspNonce: "" }, assets));
+			return next();
+		}
 		const raw = getCookie(c, SESSION_COOKIE);
 		const sessionToken = typeof raw === "string" && raw.length > 0 ? raw : null;
 		const row = resolveUser(sessionToken);

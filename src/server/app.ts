@@ -123,6 +123,7 @@ export function createApp(assets: InertiaAssets) {
 	// is no longer needed. /uploads responses get script-src 'none' (stored-XSS
 	// guard: content is attacker-controlled bytes with client-declared content-type).
 	app.use(async (c, next) => {
+		if (c.req.raw.url.includes("/api/event")) return next();
 		await next();
 		const nonce = c.get("cspNonce");
 		const isUploads = UPLOADS_RE.test(safeUrl(c.req.url).pathname);
