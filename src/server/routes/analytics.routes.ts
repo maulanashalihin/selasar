@@ -189,9 +189,9 @@ if (!canAccessSite(siteId, c.var.user!)) return c.json({ error: "Site not found"
 
 	const r = rows[0] ?? { visitors: 0, visits: 0, pageviews: 0, bounces: 0, total_duration: 0 };
 	const p = prevRows[0] ?? { visitors: 0, visits: 0, pageviews: 0, bounces: 0, total_duration: 0 };
-	const bounceRate = r.pageviews > 0 ? (r.bounces / r.pageviews) * 100 : 0;
+	const bounceRate = r.visits > 0 ? (r.bounces / r.visits) * 100 : 0;
 	const avgDuration = r.visits > 0 ? r.total_duration / r.visits : 0;
-	const prevBounceRate = p.pageviews > 0 ? (p.bounces / p.pageviews) * 100 : 0;
+	const prevBounceRate = p.visits > 0 ? (p.bounces / p.visits) * 100 : 0;
 	const prevAvgDuration = p.visits > 0 ? p.total_duration / p.visits : 0;
 
 	function change(curr: number, prev: number): number | null {

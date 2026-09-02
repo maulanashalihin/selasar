@@ -74,14 +74,14 @@ describe("analytics API", () => {
 
 	it("returns overview metrics", async () => {
 		mockImpl = async () => [
-		{ visitors: 100, visits: 50, pageviews: 300, bounces: 60, total_duration: 120000 },
-		];
-		const res = await api("/api/analytics/overview?site_id=1&range=7d", userCookie);
-		expect(res.status).toBe(200);
-		const data = await res.json();
-		expect(data.visitors).toBe(100);
-		expect(data.pageviews).toBe(300);
-		expect(data.bounceRate).toBe(20);
+		{ visitors: 100, visits: 50, pageviews: 300, bounces: 10, total_duration: 120000 },
+	];
+	const res = await api("/api/analytics/overview?site_id=1&range=7d", userCookie);
+	expect(res.status).toBe(200);
+	const data = await res.json();
+	expect(data.visitors).toBe(100);
+	expect(data.pageviews).toBe(300);
+	expect(data.bounceRate).toBe(20);
 	expect(data.avgDuration).toBe(2400);
 	});
 
