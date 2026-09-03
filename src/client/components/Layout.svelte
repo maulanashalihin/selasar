@@ -490,11 +490,5 @@
 		>
 			{@render children()}
 		</main>
-
-		<footer
-			class="mt-auto px-5 py-3.5 flex items-center justify-center gap-3 text-muted text-xs border-t border-border max-md:px-4 max-md:py-3"
-		>
-			<span>Analytics</span>
-		</footer>
 	</div>
 </div>
